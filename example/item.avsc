@@ -1,0 +1,10 @@
+{
+ "type" : "record",
+ "name" : "Item",
+ "namespace" : "example.avro",
+ "fields" : [
+              {"name": "name", "type": "string"},
+              {"name": "description", "type":["string", "null"]},
+              {"name": "price", "type":["double", "null"]}
+            ]
+}

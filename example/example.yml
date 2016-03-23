@@ -1,0 +1,13 @@
+in:
+  type: file
+  path_prefix: "items"
+  parser:
+    type: avro
+    avsc : "./item.avsc"
+    columns:
+      - {name: "name", type: "string"}
+      - {name: "description", type: "string"}
+      - {name: "price", type: "double"}
+
+out:
+  type: stdout
