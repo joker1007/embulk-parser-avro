@@ -1,6 +1,7 @@
 package org.embulk.parser.avro;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -14,6 +15,11 @@ import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.Task;
 import org.embulk.config.TaskSource;
+import org.embulk.parser.avro.getter.BaseColumnGetter;
+import org.embulk.parser.avro.getter.ColumnGetterFactory;
+import org.embulk.spi.Column;
+import org.embulk.spi.Exec;
+import org.embulk.spi.PageBuilder;
 import org.embulk.spi.ParserPlugin;
 import org.embulk.spi.FileInput;
 import org.embulk.spi.PageOutput;
@@ -26,6 +32,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 public class AvroParserPlugin
@@ -57,9 +64,17 @@ public class AvroParserPlugin
     {
         PluginTask task = taskSource.loadTask(PluginTask.class);
         File avsc = task.getAvsc().getFile();
+        List<Column> columns = schema.getColumns();
 
-        try (FileInputInputStream is = new FileInputInputStream(input)) {
+        try (FileInputInputStream is = new FileInputInputStream(input); final PageBuilder pageBuilder = new PageBuilder(Exec.getBufferAllocator(), schema, output)) {
             org.apache.avro.Schema avroSchema = new org.apache.avro.Schema.Parser().parse(avsc);
+            ColumnGetterFactory factory = new ColumnGetterFactory(avroSchema, pageBuilder);
+            ImmutableMap.Builder<String, BaseColumnGetter> columnGettersBuilder = ImmutableMap.builder();
+            for (Column column : columns) {
+                BaseColumnGetter columnGetter = factory.newColumnGetter(column);
+                columnGettersBuilder.put(column.getName(), columnGetter);
+            }
+            ImmutableMap<String, BaseColumnGetter> columnGetters = columnGettersBuilder.build();
             DatumReader<GenericRecord> reader = new GenericDatumReader<>(avroSchema);
             GenericRecord record = null;
             while (is.nextFile()) {
@@ -67,13 +82,19 @@ public class AvroParserPlugin
                 while (ds.hasNext()) {
                     record = ds.next(record);
                     System.out.println(record);
+                    for (Column column : columns) {
+                        BaseColumnGetter columnGetter = columnGetters.get(column.getName());
+                        columnGetter.setValue(record.get(column.getName()));
+                        column.visit(columnGetter);
+                    }
+                    pageBuilder.addRecord();
                 }
             }
-        }
-        catch(IOException e) {
-        }
 
-        // Write your code here :)
-        throw new UnsupportedOperationException("AvroParserPlugin.run method is not implemented yet");
+            pageBuilder.finish();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

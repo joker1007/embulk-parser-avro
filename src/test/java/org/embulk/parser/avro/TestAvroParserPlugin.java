@@ -57,7 +57,7 @@ public class TestAvroParserPlugin
         transaction(config, fileInput(new File(this.getClass().getResource("items.avro").getPath())));
 
         List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
-        assertEquals(2, records.size());
+        assertEquals(6, records.size());
     }
 
     private void recreatePageOutput()
