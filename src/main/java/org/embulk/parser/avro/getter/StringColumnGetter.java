@@ -4,9 +4,19 @@ import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
 
 public class StringColumnGetter extends BaseColumnGetter {
+    protected String value;
 
     public StringColumnGetter(PageBuilder pageBuilder) {
         super(pageBuilder);
+    }
+
+    @Override
+    public void setValue(Object value)
+    {
+        if (value == null)
+            this.value = null;
+        else
+            this.value = value.toString();
     }
 
     @Override
@@ -15,7 +25,7 @@ public class StringColumnGetter extends BaseColumnGetter {
             pageBuilder.setNull(column);
         }
         else {
-            pageBuilder.setBoolean(column, Boolean.parseBoolean(this.value.toString()));
+            pageBuilder.setBoolean(column, Boolean.parseBoolean(value));
         }
     }
 
@@ -25,7 +35,7 @@ public class StringColumnGetter extends BaseColumnGetter {
             pageBuilder.setNull(column);
         }
         else {
-            pageBuilder.setLong(column, Long.parseLong(this.value.toString()));
+            pageBuilder.setLong(column, Long.parseLong(value));
         }
     }
 
@@ -35,7 +45,7 @@ public class StringColumnGetter extends BaseColumnGetter {
             pageBuilder.setNull(column);
         }
         else {
-            pageBuilder.setDouble(column, Double.parseDouble(this.value.toString()));
+            pageBuilder.setDouble(column, Double.parseDouble(value));
         }
     }
 
@@ -45,7 +55,7 @@ public class StringColumnGetter extends BaseColumnGetter {
             pageBuilder.setNull(column);
         }
         else {
-            pageBuilder.setString(column, this.value.toString());
+            pageBuilder.setString(column, value);
         }
     }
 

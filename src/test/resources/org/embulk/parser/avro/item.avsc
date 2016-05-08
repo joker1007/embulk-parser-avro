@@ -1,10 +1,27 @@
 {
- "type" : "record",
- "name" : "Item",
- "namespace" : "example.avro",
- "fields" : [
-              {"name": "name", "type": "string"},
-              {"name": "description", "type":["string", "null"]},
-              {"name": "price", "type":["double", "null"]}
-            ]
+  "type" : "record",
+  "name" : "Item",
+  "namespace" : "example.avro",
+  "fields" : [
+    {"name": "id", "type": "int"},
+    {"name": "code", "type": "long"},
+    {"name": "name", "type": "string"},
+    {"name": "description", "type": ["string", "null"]},
+    {"name": "flag", "type": "boolean"},
+    {"name": "created_at", "type": "string"},
+    {"name": "created_at_utc", "type": "float"},
+    {"name": "price", "type": ["double", "null"]},
+    {"name": "spec", "type": {
+      "type": "record",
+      "name": "item_spec",
+      "fields" : [
+        {"name" : "key", "type" : "string"},
+        {"name" : "value", "type" : ["string", "null"]}
+      ]}
+    },
+    {"name": "tags", "type": [{"type": "array", "items": "string"}, "null"]},
+    {"name": "options", "type": {"type": "map", "values": ["string", "null"]}},
+    {"name": "item_type", "type": {"name": "item_type_enum", "type": "enum", "symbols": ["D", "M"]}},
+    {"name": "dummy", "type": "null"}
+  ]
 }

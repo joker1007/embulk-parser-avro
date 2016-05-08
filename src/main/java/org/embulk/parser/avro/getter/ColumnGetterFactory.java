@@ -36,15 +36,24 @@ public class ColumnGetterFactory {
     {
         switch (typeName) {
             case "string":
+            case "enum":
                 return new StringColumnGetter(pageBuilder);
             case "int":
                 return new IntegerColumnGetter(pageBuilder);
             case "long":
-                return new IntegerColumnGetter(pageBuilder);
+                return new LongColumnGetter(pageBuilder);
             case "float":
                 return new FloatColumnGetter(pageBuilder);
             case "double":
-                return new FloatColumnGetter(pageBuilder);
+                return new DoubleColumnGetter(pageBuilder);
+            case "boolean":
+                return new BooleanColumnGetter(pageBuilder);
+            case "array":
+                return new ArrayColumnGetter(pageBuilder);
+            case "map":
+                return new MapColumnGetter(pageBuilder);
+            case "record":
+                return new RecordColumnGetter(pageBuilder);
             case "byte":
             default:
                 throw new DataException(String.format("%s is not supported", typeName));

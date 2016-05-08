@@ -4,9 +4,16 @@ import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
 
 public class FloatColumnGetter extends BaseColumnGetter {
+    protected Float value;
 
     public FloatColumnGetter(PageBuilder pageBuilder) {
         super(pageBuilder);
+    }
+
+    @Override
+    public void setValue(Object value)
+    {
+        this.value = (Float) value;
     }
 
     @Override
@@ -14,8 +21,7 @@ public class FloatColumnGetter extends BaseColumnGetter {
         if (value == null) {
             pageBuilder.setNull(column);
         } else {
-            Double casted = (Double) value;
-            pageBuilder.setLong(column, casted.longValue());
+            pageBuilder.setLong(column, value.longValue());
         }
     }
 
@@ -24,8 +30,7 @@ public class FloatColumnGetter extends BaseColumnGetter {
         if (value == null) {
             pageBuilder.setNull(column);
         } else {
-            Double casted = (Double) value;
-            pageBuilder.setDouble(column, casted);
+            pageBuilder.setDouble(column, value.doubleValue());
         }
     }
 
@@ -34,13 +39,7 @@ public class FloatColumnGetter extends BaseColumnGetter {
         if (value == null) {
             pageBuilder.setNull(column);
         } else {
-            Double casted = (Double) value;
-            pageBuilder.setString(column, casted.toString());
+            pageBuilder.setString(column, value.toString());
         }
-    }
-
-    @Override
-    public void timestampColumn(Column column) {
-
     }
 }

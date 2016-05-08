@@ -5,27 +5,34 @@ import com.google.common.collect.Lists;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskSource;
-import org.embulk.spi.*;
+import org.embulk.spi.ColumnConfig;
+import org.embulk.spi.FileInput;
+import org.embulk.spi.ParserPlugin;
+import org.embulk.spi.Schema;
+import org.embulk.spi.SchemaConfig;
 import org.embulk.spi.TestPageBuilderReader.MockPageOutput;
-import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.type.Type;
 import org.embulk.spi.util.InputStreamFileInput;
 import org.embulk.spi.util.Pages;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-import static org.embulk.spi.type.Types.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.msgpack.value.MapValue;
+import org.msgpack.value.ValueFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+
+import static org.embulk.spi.type.Types.BOOLEAN;
+import static org.embulk.spi.type.Types.DOUBLE;
+import static org.embulk.spi.type.Types.LONG;
+import static org.embulk.spi.type.Types.STRING;
+import static org.embulk.spi.type.Types.JSON;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class TestAvroParserPlugin
 {
@@ -50,7 +57,17 @@ public class TestAvroParserPlugin
             throws Exception
     {
         SchemaConfig schema = schema(
-                column("name", STRING), column("description", STRING), column("price", DOUBLE));
+                column("id", LONG),
+                column("code", STRING),
+                column("name", STRING),
+                column("description", STRING),
+                column("flag", BOOLEAN),
+                column("price", DOUBLE),
+                column("item_type", STRING),
+                column("tags", JSON),
+                column("options", JSON),
+                column("spec", JSON)
+        );
 
         ConfigSource config = this.config.deepCopy().set("columns", schema).set("avsc", this.getClass().getResource("item.avsc").getPath());
 
@@ -58,6 +75,16 @@ public class TestAvroParserPlugin
 
         List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
         assertEquals(6, records.size());
+
+        Object[] record = records.get(0);
+        assertEquals(1L, record[0]);
+        assertEquals("123456789012345678", record[1]);
+        assertEquals("Desktop", record[2]);
+        assertEquals(true, record[4]);
+        assertEquals("D", record[6]);
+        assertEquals("[\"tag1\",\"tag2\"]", record[7].toString());
+        assertEquals("bar", ((MapValue)record[8]).map().get(ValueFactory.newString("foo")).toString());
+        assertEquals("opt1", ((MapValue)record[9]).map().get(ValueFactory.newString("key")).toString());
     }
 
     private void recreatePageOutput()

@@ -1,28 +1,36 @@
 package org.embulk.parser.avro.getter;
 
 import org.embulk.spi.Column;
-import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.PageBuilder;
 
-public class BooleanColumnGetter extends BaseColumnGetter {
-    protected Boolean value;
+public class DoubleColumnGetter extends BaseColumnGetter {
+    protected Double value;
 
-    public BooleanColumnGetter(PageBuilder pageBuilder) {
+    public DoubleColumnGetter(PageBuilder pageBuilder) {
         super(pageBuilder);
     }
 
     @Override
     public void setValue(Object value)
     {
-        this.value = (Boolean) value;
+        this.value = (Double) value;
     }
 
     @Override
-    public void booleanColumn(Column column) {
+    public void longColumn(Column column) {
         if (value == null) {
             pageBuilder.setNull(column);
         } else {
-            pageBuilder.setBoolean(column, value);
+            pageBuilder.setLong(column, value.longValue());
+        }
+    }
+
+    @Override
+    public void doubleColumn(Column column) {
+        if (value == null) {
+            pageBuilder.setNull(column);
+        } else {
+            pageBuilder.setDouble(column, value);
         }
     }
 
