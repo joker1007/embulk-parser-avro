@@ -52,11 +52,9 @@ public class ColumnGetterFactory {
             case "boolean":
                 return new BooleanColumnGetter(pageBuilder, timestampParsers);
             case "array":
-                return new ArrayColumnGetter(pageBuilder, timestampParsers);
             case "map":
-                return new MapColumnGetter(pageBuilder, timestampParsers);
             case "record":
-                return new RecordColumnGetter(pageBuilder, timestampParsers);
+                return new GenericDataColumnGetter(pageBuilder, timestampParsers);
             case "byte":
             default:
                 throw new DataException(String.format("%s is not supported", typeName));

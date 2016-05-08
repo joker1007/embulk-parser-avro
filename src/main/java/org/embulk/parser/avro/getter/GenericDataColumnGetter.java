@@ -5,8 +5,8 @@ import org.embulk.spi.PageBuilder;
 import org.embulk.spi.time.TimestampParser;
 import org.msgpack.value.Value;
 
-public class MapColumnGetter extends BaseColumnGetter {
-    public MapColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
+public class GenericDataColumnGetter extends BaseColumnGetter {
+    public GenericDataColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
         super(pageBuilder, timestampParsers);
     }
 
