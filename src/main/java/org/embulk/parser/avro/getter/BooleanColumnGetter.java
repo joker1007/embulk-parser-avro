@@ -1,14 +1,14 @@
 package org.embulk.parser.avro.getter;
 
 import org.embulk.spi.Column;
-import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.PageBuilder;
+import org.embulk.spi.time.TimestampParser;
 
 public class BooleanColumnGetter extends BaseColumnGetter {
     protected Boolean value;
 
-    public BooleanColumnGetter(PageBuilder pageBuilder) {
-        super(pageBuilder);
+    public BooleanColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
+        super(pageBuilder, timestampParsers);
     }
 
     @Override

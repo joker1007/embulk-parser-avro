@@ -4,13 +4,16 @@ import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
+import org.embulk.spi.time.TimestampParser;
 
 public class BaseColumnGetter implements ColumnVisitor {
     protected final PageBuilder pageBuilder;
+    protected final TimestampParser[] timestampParsers;
     protected Object value;
 
-    public BaseColumnGetter(PageBuilder pageBuilder) {
+    public BaseColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
         this.pageBuilder = pageBuilder;
+        this.timestampParsers = timestampParsers;
     }
 
     public void setValue(Object value)

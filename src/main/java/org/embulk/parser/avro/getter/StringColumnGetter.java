@@ -2,12 +2,15 @@ package org.embulk.parser.avro.getter;
 
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
+import org.embulk.spi.json.JsonParser;
+import org.embulk.spi.time.TimestampParser;
 
 public class StringColumnGetter extends BaseColumnGetter {
     protected String value;
+    private final JsonParser jsonParser = new JsonParser();
 
-    public StringColumnGetter(PageBuilder pageBuilder) {
-        super(pageBuilder);
+    public StringColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
+        super(pageBuilder, timestampParsers);
     }
 
     @Override
@@ -61,11 +64,22 @@ public class StringColumnGetter extends BaseColumnGetter {
 
     @Override
     public void timestampColumn(Column column) {
-
+        if (this.value == null) {
+            pageBuilder.setNull(column);
+        }
+        else {
+            TimestampParser parser = timestampParsers[column.getIndex()];
+            pageBuilder.setTimestamp(column, parser.parse(value));
+        }
     }
 
     @Override
     public void jsonColumn(Column column) {
-
+        if (this.value == null) {
+            pageBuilder.setNull(column);
+        }
+        else {
+            pageBuilder.setJson(column, jsonParser.parse(value));
+        }
     }
 }

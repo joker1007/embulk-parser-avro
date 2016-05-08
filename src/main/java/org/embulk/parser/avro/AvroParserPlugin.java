@@ -1,17 +1,11 @@
 package org.embulk.parser.avro;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
 import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
-import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.Task;
 import org.embulk.config.TaskSource;
@@ -19,27 +13,26 @@ import org.embulk.parser.avro.getter.BaseColumnGetter;
 import org.embulk.parser.avro.getter.ColumnGetterFactory;
 import org.embulk.spi.Column;
 import org.embulk.spi.Exec;
-import org.embulk.spi.PageBuilder;
-import org.embulk.spi.ParserPlugin;
 import org.embulk.spi.FileInput;
+import org.embulk.spi.PageBuilder;
 import org.embulk.spi.PageOutput;
+import org.embulk.spi.ParserPlugin;
 import org.embulk.spi.Schema;
 import org.embulk.spi.SchemaConfig;
+import org.embulk.spi.time.TimestampParser;
 import org.embulk.spi.unit.LocalFile;
 import org.embulk.spi.util.FileInputInputStream;
+import org.embulk.spi.util.Timestamps;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 public class AvroParserPlugin
         implements ParserPlugin
 {
     public interface PluginTask
-            extends Task
+            extends Task, TimestampParser.Task
     {
         @Config("columns")
         public SchemaConfig getColumns();
@@ -65,10 +58,11 @@ public class AvroParserPlugin
         PluginTask task = taskSource.loadTask(PluginTask.class);
         File avsc = task.getAvsc().getFile();
         List<Column> columns = schema.getColumns();
+        final TimestampParser[] timestampParsers = Timestamps.newTimestampColumnParsers(task, task.getColumns());
 
         try (FileInputInputStream is = new FileInputInputStream(input); final PageBuilder pageBuilder = new PageBuilder(Exec.getBufferAllocator(), schema, output)) {
             org.apache.avro.Schema avroSchema = new org.apache.avro.Schema.Parser().parse(avsc);
-            ColumnGetterFactory factory = new ColumnGetterFactory(avroSchema, pageBuilder);
+            ColumnGetterFactory factory = new ColumnGetterFactory(avroSchema, pageBuilder, timestampParsers);
             ImmutableMap.Builder<String, BaseColumnGetter> columnGettersBuilder = ImmutableMap.builder();
             for (Column column : columns) {
                 BaseColumnGetter columnGetter = factory.newColumnGetter(column);

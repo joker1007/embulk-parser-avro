@@ -2,11 +2,12 @@ package org.embulk.parser.avro.getter;
 
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
+import org.embulk.spi.time.TimestampParser;
 import org.msgpack.value.Value;
 
 public class ArrayColumnGetter extends BaseColumnGetter {
-    public ArrayColumnGetter(PageBuilder pageBuilder) {
-        super(pageBuilder);
+    public ArrayColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
+        super(pageBuilder, timestampParsers);
     }
 
     @Override

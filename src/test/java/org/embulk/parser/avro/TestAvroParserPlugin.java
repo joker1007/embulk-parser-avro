@@ -31,6 +31,7 @@ import static org.embulk.spi.type.Types.DOUBLE;
 import static org.embulk.spi.type.Types.LONG;
 import static org.embulk.spi.type.Types.STRING;
 import static org.embulk.spi.type.Types.JSON;
+import static org.embulk.spi.type.Types.TIMESTAMP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -66,7 +67,9 @@ public class TestAvroParserPlugin
                 column("item_type", STRING),
                 column("tags", JSON),
                 column("options", JSON),
-                column("spec", JSON)
+                column("spec", JSON),
+                column("created_at", TIMESTAMP, config().set("format", "%Y-%m-%dT%H:%M:%S%:z")),
+                column("created_at_utc", TIMESTAMP)
         );
 
         ConfigSource config = this.config.deepCopy().set("columns", schema).set("avsc", this.getClass().getResource("item.avsc").getPath());
@@ -85,6 +88,8 @@ public class TestAvroParserPlugin
         assertEquals("[\"tag1\",\"tag2\"]", record[7].toString());
         assertEquals("bar", ((MapValue)record[8]).map().get(ValueFactory.newString("foo")).toString());
         assertEquals("opt1", ((MapValue)record[9]).map().get(ValueFactory.newString("key")).toString());
+        assertEquals("2016-05-08 19:35:43 UTC", record[10].toString());
+        assertEquals("2016-05-08 19:35:25.952 UTC", record[11].toString());
     }
 
     private void recreatePageOutput()
