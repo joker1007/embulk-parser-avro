@@ -75,7 +75,6 @@ public class AvroParserPlugin
                 DataFileStream<GenericRecord> ds = new DataFileStream<>(is, reader);
                 while (ds.hasNext()) {
                     record = ds.next(record);
-                    System.out.println(record);
                     for (Column column : columns) {
                         BaseColumnGetter columnGetter = columnGetters.get(column.getName());
                         columnGetter.setValue(record.get(column.getName()));
