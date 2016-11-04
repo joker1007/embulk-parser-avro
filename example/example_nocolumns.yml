@@ -1,0 +1,9 @@
+in:
+  type: file
+  path_prefix: "items"
+  parser:
+    type: avro
+    avsc : "./item.avsc"
+
+out:
+  type: stdout

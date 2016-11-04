@@ -92,6 +92,46 @@ public class TestAvroParserPlugin
         assertEquals("2016-05-08 19:35:25.952 UTC", record[11].toString());
     }
 
+    @Test
+    public void useNoColumnsOption()
+            throws Exception
+    {
+        SchemaConfig schema = schema(
+                column("id", LONG),
+                column("code", LONG),
+                column("name", STRING),
+                column("description", STRING),
+                column("flag", BOOLEAN),
+                column("created_at", STRING),
+                column("created_at_utc", DOUBLE),
+                column("price", DOUBLE),
+                column("spec", JSON),
+                column("tags", JSON),
+                column("options", JSON),
+                column("item_type", STRING),
+                column("dummy", STRING)
+        );
+
+        ConfigSource config = this.config.deepCopy().set("avsc", this.getClass().getResource("item.avsc").getPath());
+
+        transaction(config, fileInput(new File(this.getClass().getResource("items.avro").getPath())));
+
+        List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
+        assertEquals(6, records.size());
+
+        Object[] record = records.get(0);
+        assertEquals(1L, record[0]);
+        assertEquals(123456789012345678L, record[1]);
+        assertEquals("Desktop", record[2]);
+        assertEquals(true, record[4]);
+        assertEquals("D", record[11]);
+        assertEquals("[\"tag1\",\"tag2\"]", record[9].toString());
+        assertEquals("bar", ((MapValue)record[10]).map().get(ValueFactory.newString("foo")).toString());
+        assertEquals("opt1", ((MapValue)record[8]).map().get(ValueFactory.newString("key")).toString());
+        assertEquals("2016-05-09T04:35:43+09:00", record[5].toString());
+        assertNull(record[12]);
+    }
+
     private void recreatePageOutput()
     {
         output = new MockPageOutput();

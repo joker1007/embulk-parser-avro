@@ -1,5 +1,6 @@
 package org.embulk.parser.avro.getter;
 
+import org.apache.avro.Schema;
 import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
@@ -20,44 +21,46 @@ public class ColumnGetterFactory {
     public BaseColumnGetter newColumnGetter(Column column)
     {
         org.apache.avro.Schema fieldSchema = avroSchema.getField(column.getName()).schema();
-        switch (fieldSchema.getType().getName()) {
-            case "union" :
-                String typeName = "";
-                for (org.apache.avro.Schema type : fieldSchema.getTypes()) {
-                    if (!type.getName().equals("null")) {
-                        typeName = type.getName();
+        switch (fieldSchema.getType()) {
+            case UNION:
+                Schema.Type type = null;
+                for (org.apache.avro.Schema sc : fieldSchema.getTypes()) {
+                    if (sc.getType() != Schema.Type.NULL) {
+                        type = sc.getType();
                         break;
                     }
                 }
-                return getColumnGetterFromTypeName(typeName);
+                return getColumnGetterFromTypeName(type);
             default :
-                return getColumnGetterFromTypeName(fieldSchema.getType().getName());
+                return getColumnGetterFromTypeName(fieldSchema.getType());
         }
     }
 
-    private BaseColumnGetter getColumnGetterFromTypeName(String typeName)
+    private BaseColumnGetter getColumnGetterFromTypeName(Schema.Type type)
     {
-        switch (typeName) {
-            case "string":
-            case "enum":
+        switch (type) {
+            case STRING:
+            case ENUM:
                 return new StringColumnGetter(pageBuilder, timestampParsers);
-            case "int":
+            case INT:
                 return new IntegerColumnGetter(pageBuilder, timestampParsers);
-            case "long":
+            case LONG:
                 return new LongColumnGetter(pageBuilder, timestampParsers);
-            case "float":
+            case FLOAT:
                 return new FloatColumnGetter(pageBuilder, timestampParsers);
-            case "double":
+            case DOUBLE:
                 return new DoubleColumnGetter(pageBuilder, timestampParsers);
-            case "boolean":
+            case BOOLEAN:
                 return new BooleanColumnGetter(pageBuilder, timestampParsers);
-            case "array":
-            case "map":
-            case "record":
+            case ARRAY:
+            case MAP:
+            case RECORD:
                 return new GenericDataColumnGetter(pageBuilder, timestampParsers);
-            case "byte":
+            case NULL:
+                return new StringColumnGetter(pageBuilder, timestampParsers);
+            case BYTES:
             default:
-                throw new DataException(String.format("%s is not supported", typeName));
+                throw new DataException(String.format("%s is not supported", type.getName()));
         }
     }
 }
