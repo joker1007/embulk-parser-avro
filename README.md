@@ -11,9 +11,11 @@
 
 - **type**: Specify this parser as avro
 - **avsc**: Specify avro schema file.
-- **columns**: Specify column name and type. See below (array, required)
+- **columns**: Specify column name and type. See below (array, optional)
 * **default_timezone**: Default timezone of the timestamp (string, default: UTC)
 * **default_timestamp_format**: Default timestamp format of the timestamp (string, default: `%Y-%m-%d %H:%M:%S.%N %z`)
+
+If columns is not set, this plugin detect schema automatically by using avsc schema.
 
 ## Example
 
