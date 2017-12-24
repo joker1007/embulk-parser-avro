@@ -1,24 +1,35 @@
 package org.embulk.parser.avro.getter;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.avro.Schema;
 import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.time.TimestampParser;
 
+import java.util.List;
+
 public class ColumnGetterFactory {
-    private org.apache.avro.Schema avroSchema;
     private PageBuilder pageBuilder;
     private TimestampParser[] timestampParsers;
 
-    public ColumnGetterFactory(org.apache.avro.Schema avroSchema, PageBuilder pageBuilder, TimestampParser[] timestampParsers)
+    public ColumnGetterFactory(PageBuilder pageBuilder, TimestampParser[] timestampParsers)
     {
-        this.avroSchema = avroSchema;
         this.pageBuilder = pageBuilder;
         this.timestampParsers = timestampParsers;
     }
 
-    public BaseColumnGetter newColumnGetter(Column column)
+    public ImmutableMap<String, BaseColumnGetter> buildColumnGetters(org.apache.avro.Schema avroSchema, List<Column> columns) {
+
+        ImmutableMap.Builder<String, BaseColumnGetter> columnGettersBuilder = ImmutableMap.builder();
+        for (Column column : columns) {
+            BaseColumnGetter columnGetter = newColumnGetter(avroSchema, column);
+            columnGettersBuilder.put(column.getName(), columnGetter);
+        }
+        return columnGettersBuilder.build();
+    }
+
+    private BaseColumnGetter newColumnGetter(org.apache.avro.Schema avroSchema, Column column)
     {
         org.apache.avro.Schema fieldSchema = avroSchema.getField(column.getName()).schema();
         switch (fieldSchema.getType()) {

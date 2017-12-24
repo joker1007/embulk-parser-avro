@@ -72,7 +72,7 @@ public class TestAvroParserPlugin
                 column("created_at_utc", TIMESTAMP)
         );
 
-        ConfigSource config = this.config.deepCopy().set("columns", schema).set("avsc", this.getClass().getResource("item.avsc").getPath());
+        ConfigSource config = this.config.deepCopy().set("columns", schema);
 
         transaction(config, fileInput(new File(this.getClass().getResource("items.avro").getPath())));
 

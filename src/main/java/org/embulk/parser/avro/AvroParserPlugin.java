@@ -1,5 +1,6 @@
 package org.embulk.parser.avro;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.avro.file.DataFileStream;
@@ -28,7 +29,6 @@ import org.embulk.spi.unit.LocalFile;
 import org.embulk.spi.util.FileInputInputStream;
 import org.embulk.spi.util.Timestamps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -43,7 +43,8 @@ public class AvroParserPlugin
         public SchemaConfig getColumns();
 
         @Config("avsc")
-        LocalFile getAvsc();
+        @ConfigDefault("null")
+        public Optional<LocalFile> getAvsc();
     }
 
     @Override
@@ -51,74 +52,78 @@ public class AvroParserPlugin
     {
         PluginTask task = config.loadConfig(PluginTask.class);
 
-        File avsc = task.getAvsc().getFile();
         org.apache.avro.Schema avroSchema;
-        try {
-            avroSchema = new org.apache.avro.Schema.Parser().parse(avsc);
-        } catch (IOException e) {
-            throw new ConfigException("avsc file is not found");
+        Schema schema;
+        SchemaConfig columns = task.getColumns();
+        if (columns.isEmpty()) {
+            LocalFile avsc = task.getAvsc().orNull();
+            if (avsc == null) {
+                throw new ConfigException("Field 'avsc' is required if 'columns' is not specified");
+            }
+            try {
+                avroSchema = new org.apache.avro.Schema.Parser().parse(avsc.getFile());
+            } catch (IOException e) {
+                throw new ConfigException("avsc file is not found");
+            }
+            schema = buildSchema(avroSchema);
+        } else {
+            schema = columns.toSchema();
         }
-
-        Schema schema = buildSchema(task.getColumns(), avroSchema);
 
         control.run(task.dump(), schema);
     }
 
-    Schema buildSchema(SchemaConfig columns, org.apache.avro.Schema avroSchema) {
-        if (columns.size() > 0) {
-            return columns.toSchema();
-        } else {
-            int index = 0;
-            ImmutableList.Builder<Column> builder = ImmutableList.builder();
-            for (org.apache.avro.Schema.Field field : avroSchema.getFields()) {
-                String name = field.name();
+    Schema buildSchema(org.apache.avro.Schema avroSchema) {
+        int index = 0;
+        ImmutableList.Builder<Column> builder = ImmutableList.builder();
+        for (org.apache.avro.Schema.Field field : avroSchema.getFields()) {
+            String name = field.name();
 
-                org.apache.avro.Schema.Type avroType = null;
-                if (field.schema().getType() == org.apache.avro.Schema.Type.UNION) {
-                    for (org.apache.avro.Schema sc : field.schema().getTypes()) {
-                        if (sc.getType() != org.apache.avro.Schema.Type.NULL) {
-                            avroType = sc.getType();
-                            break;
-                        }
+            org.apache.avro.Schema.Type avroType = null;
+            if (field.schema().getType() == org.apache.avro.Schema.Type.UNION) {
+                for (org.apache.avro.Schema sc : field.schema().getTypes()) {
+                    if (sc.getType() != org.apache.avro.Schema.Type.NULL) {
+                        avroType = sc.getType();
+                        break;
                     }
-                } else {
-                    avroType = field.schema().getType();
                 }
-                switch (avroType) {
-                    case STRING:
-                    case BYTES:
-                    case FIXED:
-                    case ENUM:
-                    case NULL:
-                        builder.add(new Column(index, name, Types.STRING));
-                        index++;
-                        break;
-                    case INT:
-                    case LONG:
-                        builder.add(new Column(index, name, Types.LONG));
-                        index++;
-                        break;
-                    case FLOAT:
-                    case DOUBLE:
-                        builder.add(new Column(index, name, Types.DOUBLE));
-                        index++;
-                        break;
-                    case BOOLEAN:
-                        builder.add(new Column(index, name, Types.BOOLEAN));
-                        index++;
-                        break;
-                    case MAP:
-                    case ARRAY:
-                    case RECORD:
-                        builder.add(new Column(index, name, Types.JSON));
-                        index++;
-                        break;
-                    default:
-                        throw new RuntimeException("Unsupported type");
-                }
+            } else {
+                avroType = field.schema().getType();
             }
-            return new Schema(builder.build());
+            switch (avroType) {
+                case STRING:
+                case BYTES:
+                case FIXED:
+                case ENUM:
+                case NULL:
+                    builder.add(new Column(index, name, Types.STRING));
+                    index++;
+                    break;
+                case INT:
+                case LONG:
+                    builder.add(new Column(index, name, Types.LONG));
+                    index++;
+                    break;
+                case FLOAT:
+                case DOUBLE:
+                    builder.add(new Column(index, name, Types.DOUBLE));
+                    index++;
+                    break;
+                case BOOLEAN:
+                    builder.add(new Column(index, name, Types.BOOLEAN));
+                    index++;
+                    break;
+                case MAP:
+                case ARRAY:
+                case RECORD:
+                    builder.add(new Column(index, name, Types.JSON));
+                    index++;
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported type");
+            }
         }
+        return new Schema(builder.build());
     }
 
     @Override
@@ -128,26 +133,14 @@ public class AvroParserPlugin
         PluginTask task = taskSource.loadTask(PluginTask.class);
         List<Column> columns = schema.getColumns();
         final TimestampParser[] timestampParsers = Timestamps.newTimestampColumnParsers(task, task.getColumns());
-        File avsc = task.getAvsc().getFile();
-        final org.apache.avro.Schema avroSchema;
-        try {
-            avroSchema = new org.apache.avro.Schema.Parser().parse(avsc);
-        } catch (IOException e) {
-            throw new ConfigException("avsc file is not found");
-        }
 
         try (FileInputInputStream is = new FileInputInputStream(input); final PageBuilder pageBuilder = new PageBuilder(Exec.getBufferAllocator(), schema, output)) {
-            ColumnGetterFactory factory = new ColumnGetterFactory(avroSchema, pageBuilder, timestampParsers);
-            ImmutableMap.Builder<String, BaseColumnGetter> columnGettersBuilder = ImmutableMap.builder();
-            for (Column column : columns) {
-                BaseColumnGetter columnGetter = factory.newColumnGetter(column);
-                columnGettersBuilder.put(column.getName(), columnGetter);
-            }
-            ImmutableMap<String, BaseColumnGetter> columnGetters = columnGettersBuilder.build();
-            DatumReader<GenericRecord> reader = new GenericDatumReader<>(avroSchema);
+            ColumnGetterFactory factory = new ColumnGetterFactory(pageBuilder, timestampParsers);
+            DatumReader<GenericRecord> reader = new GenericDatumReader<>();
             GenericRecord record = null;
             while (is.nextFile()) {
                 DataFileStream<GenericRecord> ds = new DataFileStream<>(is, reader);
+                ImmutableMap<String, BaseColumnGetter> columnGetters = factory.buildColumnGetters(ds.getSchema(), columns);
                 while (ds.hasNext()) {
                     record = ds.next(record);
                     for (Column column : columns) {
