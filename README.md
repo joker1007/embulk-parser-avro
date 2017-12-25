@@ -10,7 +10,7 @@
 ## Configuration
 
 - **type**: Specify this parser as avro
-- **avsc**: Specify avro schema file.
+- **avsc**: Specify avro schema file. (required if `columns` is not specified)
 - **columns**: Specify column name and type. See below (array, optional)
 * **default_timezone**: Default timezone of the timestamp (string, default: UTC)
 * **default_timestamp_format**: Default timestamp format of the timestamp (string, default: `%Y-%m-%d %H:%M:%S.%N %z`)
@@ -25,7 +25,6 @@ in:
   path_prefix: "items"
   parser:
     type: avro
-    avsc : "./item.avsc"
     columns:
       - {name: "id", type: "long"}
       - {name: "code", type: "string"}

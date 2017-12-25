@@ -3,7 +3,6 @@ in:
   path_prefix: "items"
   parser:
     type: avro
-    avsc : "./item.avsc"
     columns:
       - {name: "id", type: "long"}
       - {name: "code", type: "string"}
