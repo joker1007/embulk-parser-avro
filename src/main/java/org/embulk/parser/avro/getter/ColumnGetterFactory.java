@@ -2,6 +2,7 @@ package org.embulk.parser.avro.getter;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.avro.Schema;
+import org.embulk.config.ConfigException;
 import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
@@ -19,7 +20,7 @@ public class ColumnGetterFactory {
         this.timestampParsers = timestampParsers;
     }
 
-    public ImmutableMap<String, BaseColumnGetter> buildColumnGetters(org.apache.avro.Schema avroSchema, List<Column> columns) {
+    public ImmutableMap<String, BaseColumnGetter> buildColumnGetters(Schema avroSchema, List<Column> columns) {
 
         ImmutableMap.Builder<String, BaseColumnGetter> columnGettersBuilder = ImmutableMap.builder();
         for (Column column : columns) {
@@ -29,9 +30,13 @@ public class ColumnGetterFactory {
         return columnGettersBuilder.build();
     }
 
-    private BaseColumnGetter newColumnGetter(org.apache.avro.Schema avroSchema, Column column)
+    private BaseColumnGetter newColumnGetter(Schema avroSchema, Column column)
     {
-        org.apache.avro.Schema fieldSchema = avroSchema.getField(column.getName()).schema();
+        Schema.Field field = avroSchema.getField(column.getName());
+        if (field == null) {
+            throw new ConfigException("Unknown field '" + column.getName() + "'. 'avsc' is required to set its default value.");
+        }
+        Schema fieldSchema = field.schema();
         switch (fieldSchema.getType()) {
             case UNION:
                 Schema.Type type = null;

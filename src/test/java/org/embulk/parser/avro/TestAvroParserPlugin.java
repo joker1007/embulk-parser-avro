@@ -132,6 +132,34 @@ public class TestAvroParserPlugin
         assertNull(record[12]);
     }
 
+    @Test
+    public void useNewSchema()
+            throws Exception
+    {
+        SchemaConfig schema = schema(
+                column("id", LONG),
+                column("code", LONG),
+                column("name", STRING),
+                column("description", STRING),
+                column("default_0_field", LONG),
+                column("default_null_field", LONG)
+        );
+
+        ConfigSource config = this.config.deepCopy().set("avsc", this.getClass().getResource("new_item.avsc").getPath());
+
+        transaction(config, fileInput(new File(this.getClass().getResource("items.avro").getPath())));
+
+        List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
+        assertEquals(6, records.size());
+
+        Object[] record = records.get(0);
+        assertEquals(1L, record[0]);
+        assertEquals(123456789012345678L, record[1]);
+        assertEquals("Desktop", record[2]);
+        assertEquals(0L, record[4]);
+        assertNull(record[5]);
+    }
+
     private void recreatePageOutput()
     {
         output = new MockPageOutput();

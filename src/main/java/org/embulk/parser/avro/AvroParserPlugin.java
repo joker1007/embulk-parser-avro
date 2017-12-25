@@ -133,14 +133,25 @@ public class AvroParserPlugin
         PluginTask task = taskSource.loadTask(PluginTask.class);
         List<Column> columns = schema.getColumns();
         final TimestampParser[] timestampParsers = Timestamps.newTimestampColumnParsers(task, task.getColumns());
+        org.apache.avro.Schema avscSchema = null;
+        LocalFile avsc = task.getAvsc().orNull();
+        if (avsc != null) {
+            try {
+                avscSchema = new org.apache.avro.Schema.Parser().parse(avsc.getFile());
+            } catch (IOException e) {
+                throw new ConfigException("avsc file is not found");
+            }
+        }
 
         try (FileInputInputStream is = new FileInputInputStream(input); final PageBuilder pageBuilder = new PageBuilder(Exec.getBufferAllocator(), schema, output)) {
             ColumnGetterFactory factory = new ColumnGetterFactory(pageBuilder, timestampParsers);
-            DatumReader<GenericRecord> reader = new GenericDatumReader<>();
+            // Use avscSchema to assign default values to unknown fields in avro files
+            DatumReader<GenericRecord> reader = new GenericDatumReader<>(avscSchema);
             GenericRecord record = null;
             while (is.nextFile()) {
                 DataFileStream<GenericRecord> ds = new DataFileStream<>(is, reader);
-                ImmutableMap<String, BaseColumnGetter> columnGetters = factory.buildColumnGetters(ds.getSchema(), columns);
+                org.apache.avro.Schema avroSchema = avscSchema != null ? avscSchema : ds.getSchema();
+                ImmutableMap<String, BaseColumnGetter> columnGetters = factory.buildColumnGetters(avroSchema, columns);
                 while (ds.hasNext()) {
                     record = ds.next(record);
                     for (Column column : columns) {

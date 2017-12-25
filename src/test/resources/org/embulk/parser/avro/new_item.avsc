@@ -1,0 +1,13 @@
+{
+  "type" : "record",
+  "name" : "Item",
+  "namespace" : "example.avro",
+  "fields" : [
+    {"name": "id", "type": "int"},
+    {"name": "code", "type": "long"},
+    {"name": "name", "type": "string"},
+    {"name": "description", "type": ["string", "null"]},
+    {"name": "default_0_field", "type": "int", "default": 0},
+    {"name": "default_null_field", "type": ["null", "int"], "default": null}
+  ]
+}
