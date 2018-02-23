@@ -15,17 +15,17 @@ configurations {
 
 version = "0.2.0"
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.14"
-    provided "org.embulk:embulk-core:0.8.14"
-    compile "org.apache.avro:avro:1.8.0"
+    compile  "org.embulk:embulk-core:0.9.4"
+    provided "org.embulk:embulk-core:0.9.4"
+    compile "org.apache.avro:avro:1.8.2"
     testCompile "junit:junit:4.+"
 
-    testCompile  "org.embulk:embulk-core:0.8.14:tests"
-    testCompile  "org.embulk:embulk-standards:0.8.14"
+    testCompile  "org.embulk:embulk-core:0.9.4:tests"
+    testCompile  "org.embulk:embulk-standards:0.9.4"
 }
 
 task classpath(type: Copy, dependsOn: ["jar"]) {
