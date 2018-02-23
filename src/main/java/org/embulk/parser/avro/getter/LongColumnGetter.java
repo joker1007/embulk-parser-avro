@@ -1,15 +1,18 @@
 package org.embulk.parser.avro.getter;
 
+import org.embulk.parser.avro.TimestampUnit;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
-import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampParser;
 
 public class LongColumnGetter extends BaseColumnGetter {
     protected Long value;
 
-    public LongColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
+    private final TimestampUnit[] timestampUnits;
+
+    public LongColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers, TimestampUnit[] timestampUnits) {
         super(pageBuilder, timestampParsers);
+        this.timestampUnits = timestampUnits;
     }
 
     @Override
@@ -52,7 +55,8 @@ public class LongColumnGetter extends BaseColumnGetter {
             pageBuilder.setNull(column);
         }
         else {
-            pageBuilder.setTimestamp(column, Timestamp.ofEpochSecond(value));
+            TimestampUnit unit = timestampUnits[column.getIndex()];
+            pageBuilder.setTimestamp(column, unit.toTimestamp(value));
         }
     }
 }

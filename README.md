@@ -12,10 +12,36 @@
 - **type**: Specify this parser as avro
 - **avsc**: Specify avro schema file.
 - **columns**: Specify column name and type. See below (array, optional)
+  - timestamp_unit: Specify unit of time. (This config is effective only if avro value is `long`, `int`, `float`, `double`)
 * **default_timezone**: Default timezone of the timestamp (string, default: UTC)
 * **default_timestamp_format**: Default timestamp format of the timestamp (string, default: `%Y-%m-%d %H:%M:%S.%N %z`)
 
 If columns is not set, this plugin detect schema automatically by using avsc schema.
+
+support `timestamp_unit` type is below.
+
+- "Second"
+- "second"
+- "sec"
+- "s"
+- "MilliSecond"
+- "millisecond"
+- "milli_second"
+- "milli"
+- "msec"
+- "ms"
+- "MicroSecond"
+- "microsecond"
+- "micro_second"
+- "micro"
+- "usec"
+- "us"
+- "NanoSecond"
+- "nanosecond"
+- "nano_second"
+- "nano"
+- "nsec"
+- "ns"
 
 ## Example
 
@@ -38,7 +64,7 @@ in:
       - {name: "options", type: "json"}
       - {name: "spec", type: "json"}
       - {name: "created_at", type: "timestamp", format: "%Y-%m-%dT%H:%M:%S%:z"}
-      - {name: "created_at_utc", type: "timestamp"}
+      - {name: "created_at_utc", type: "timestamp", timestamp_unit: "second"}
 
 out:
   type: stdout

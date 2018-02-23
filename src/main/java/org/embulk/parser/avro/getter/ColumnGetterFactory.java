@@ -1,6 +1,7 @@
 package org.embulk.parser.avro.getter;
 
 import org.apache.avro.Schema;
+import org.embulk.parser.avro.TimestampUnit;
 import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
@@ -10,12 +11,14 @@ public class ColumnGetterFactory {
     private org.apache.avro.Schema avroSchema;
     private PageBuilder pageBuilder;
     private TimestampParser[] timestampParsers;
+    private TimestampUnit[] timestampUnits;
 
-    public ColumnGetterFactory(org.apache.avro.Schema avroSchema, PageBuilder pageBuilder, TimestampParser[] timestampParsers)
+    public ColumnGetterFactory(org.apache.avro.Schema avroSchema, PageBuilder pageBuilder, TimestampParser[] timestampParsers, TimestampUnit[] timestampUnits)
     {
         this.avroSchema = avroSchema;
         this.pageBuilder = pageBuilder;
         this.timestampParsers = timestampParsers;
+        this.timestampUnits = timestampUnits;
     }
 
     public BaseColumnGetter newColumnGetter(Column column)
@@ -43,13 +46,13 @@ public class ColumnGetterFactory {
             case ENUM:
                 return new StringColumnGetter(pageBuilder, timestampParsers);
             case INT:
-                return new IntegerColumnGetter(pageBuilder, timestampParsers);
+                return new IntegerColumnGetter(pageBuilder, timestampParsers, timestampUnits);
             case LONG:
-                return new LongColumnGetter(pageBuilder, timestampParsers);
+                return new LongColumnGetter(pageBuilder, timestampParsers, timestampUnits);
             case FLOAT:
-                return new FloatColumnGetter(pageBuilder, timestampParsers);
+                return new FloatColumnGetter(pageBuilder, timestampParsers, timestampUnits);
             case DOUBLE:
-                return new DoubleColumnGetter(pageBuilder, timestampParsers);
+                return new DoubleColumnGetter(pageBuilder, timestampParsers, timestampUnits);
             case BOOLEAN:
                 return new BooleanColumnGetter(pageBuilder, timestampParsers);
             case ARRAY:

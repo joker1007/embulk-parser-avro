@@ -1,0 +1,20 @@
+{
+  "type" : "record",
+  "name" : "Item",
+  "namespace" : "example.avro",
+  "fields" : [
+    {"name": "timestamp", "type": "int"},
+    {"name": "timestamp_long", "type": "long"},
+    {"name": "timestamp_milli", "type": "long"},
+    {"name": "timestamp_micro", "type": "long"},
+    {"name": "timestamp_nano", "type": "long"},
+    {"name": "timestamp_float", "type": "float"},
+    {"name": "timestamp_float_milli", "type": "float"},
+    {"name": "timestamp_float_micro", "type": "float"},
+    {"name": "timestamp_float_nano", "type": "float"},
+    {"name": "timestamp_double", "type": "double"},
+    {"name": "timestamp_double_milli", "type": "double"},
+    {"name": "timestamp_double_micro", "type": "double"},
+    {"name": "timestamp_double_nano", "type": "double"}
+  ]
+}

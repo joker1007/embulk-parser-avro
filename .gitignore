@@ -5,6 +5,7 @@
 .gradle/
 /classpath/
 build/
+out/
 .idea
 /.settings/
 /.metadata/
