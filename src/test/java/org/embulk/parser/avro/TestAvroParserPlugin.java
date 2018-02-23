@@ -34,6 +34,7 @@ import static org.embulk.spi.type.Types.JSON;
 import static org.embulk.spi.type.Types.TIMESTAMP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class TestAvroParserPlugin
 {
@@ -50,6 +51,7 @@ public class TestAvroParserPlugin
     {
         config = config().set("type", "avro");
         plugin = new AvroParserPlugin();
+
         recreatePageOutput();
     }
 
@@ -69,7 +71,7 @@ public class TestAvroParserPlugin
                 column("options", JSON),
                 column("spec", JSON),
                 column("created_at", TIMESTAMP, config().set("format", "%Y-%m-%dT%H:%M:%S%:z")),
-                column("created_at_utc", TIMESTAMP)
+                column("created_at_utc", TIMESTAMP, config().set("timestamp_unit", "second"))
         );
 
         ConfigSource config = this.config.deepCopy().set("columns", schema).set("avsc", this.getClass().getResource("item.avsc").getPath());
@@ -89,7 +91,44 @@ public class TestAvroParserPlugin
         assertEquals("bar", ((MapValue)record[8]).map().get(ValueFactory.newString("foo")).toString());
         assertEquals("opt1", ((MapValue)record[9]).map().get(ValueFactory.newString("key")).toString());
         assertEquals("2016-05-08 19:35:43 UTC", record[10].toString());
-        assertEquals("2016-05-08 19:35:25.952 UTC", record[11].toString());
+        assertEquals("2016-05-08 19:35:28 UTC", record[11].toString());
+    }
+
+    @Test
+    public void useTimestampUnit()
+            throws Exception
+    {
+        SchemaConfig schema = schema(
+                column("timestamp", TIMESTAMP, config().set("timestamp_unit", "second")),
+                column("timestamp_long", TIMESTAMP, config().set("timestamp_unit", "second")),
+                column("timestamp_milli", TIMESTAMP, config().set("timestamp_unit", "milli")),
+                column("timestamp_micro", TIMESTAMP, config().set("timestamp_unit", "micro")),
+                column("timestamp_nano", TIMESTAMP, config().set("timestamp_unit", "nano")),
+                column("timestamp_float", TIMESTAMP, config().set("timestamp_unit", "second")),
+                column("timestamp_double", TIMESTAMP, config().set("timestamp_unit", "second")),
+                column("timestamp_double_milli", TIMESTAMP, config().set("timestamp_unit", "milli")),
+                column("timestamp_double_micro", TIMESTAMP, config().set("timestamp_unit", "micro")),
+                column("timestamp_double_nano", TIMESTAMP, config().set("timestamp_unit", "nano"))
+        );
+
+        ConfigSource config = this.config.deepCopy().set("columns", schema).set("avsc", this.getClass().getResource("item2.avsc").getPath());
+
+        transaction(config, fileInput(new File(this.getClass().getResource("items2.avro").getPath())));
+
+        List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
+        assertEquals(1, records.size());
+
+        Object[] record = records.get(0);
+        assertEquals("2018-02-23 12:13:52 UTC", record[0].toString());
+        assertEquals("2018-02-23 12:13:52 UTC", record[1].toString());
+        assertEquals("2018-02-23 12:13:52.717 UTC", record[2].toString());
+        assertEquals("2018-02-23 12:13:52.717249 UTC", record[3].toString());
+        assertEquals("2018-02-23 12:13:52.717249634 UTC", record[4].toString());
+        assertEquals("2018-02-23 12:13:52 UTC", record[5].toString());
+        assertTrue(record[6].toString().matches("2018-02-23 12:13:52.717249.* UTC"));
+        assertTrue(record[7].toString().matches("2018-02-23 12:13:52.717249.* UTC"));
+        assertTrue(record[8].toString().matches("2018-02-23 12:13:52.717249.* UTC"));
+        assertTrue(record[9].toString().matches("2018-02-23 12:13:52.717249.* UTC"));
     }
 
     @Test

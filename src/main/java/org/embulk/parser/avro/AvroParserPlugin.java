@@ -15,6 +15,7 @@ import org.embulk.config.TaskSource;
 import org.embulk.parser.avro.getter.BaseColumnGetter;
 import org.embulk.parser.avro.getter.ColumnGetterFactory;
 import org.embulk.spi.Column;
+import org.embulk.spi.ColumnConfig;
 import org.embulk.spi.Exec;
 import org.embulk.spi.FileInput;
 import org.embulk.spi.PageBuilder;
@@ -23,6 +24,7 @@ import org.embulk.spi.ParserPlugin;
 import org.embulk.spi.Schema;
 import org.embulk.spi.SchemaConfig;
 import org.embulk.spi.time.TimestampParser;
+import org.embulk.spi.type.TimestampType;
 import org.embulk.spi.type.Types;
 import org.embulk.spi.unit.LocalFile;
 import org.embulk.spi.util.FileInputInputStream;
@@ -44,6 +46,13 @@ public class AvroParserPlugin
 
         @Config("avsc")
         LocalFile getAvsc();
+    }
+
+    public interface TimestampUnitConfig extends Task
+    {
+        @Config("timestamp_unit")
+        @ConfigDefault("\"second\"")
+        public TimestampUnit getTimestampUnit();
     }
 
     @Override
@@ -128,6 +137,7 @@ public class AvroParserPlugin
         PluginTask task = taskSource.loadTask(PluginTask.class);
         List<Column> columns = schema.getColumns();
         final TimestampParser[] timestampParsers = Timestamps.newTimestampColumnParsers(task, task.getColumns());
+        final TimestampUnit[] timestampUnits = newTimestampUnits(task.getColumns());
         File avsc = task.getAvsc().getFile();
         final org.apache.avro.Schema avroSchema;
         try {
@@ -137,7 +147,7 @@ public class AvroParserPlugin
         }
 
         try (FileInputInputStream is = new FileInputInputStream(input); final PageBuilder pageBuilder = new PageBuilder(Exec.getBufferAllocator(), schema, output)) {
-            ColumnGetterFactory factory = new ColumnGetterFactory(avroSchema, pageBuilder, timestampParsers);
+            ColumnGetterFactory factory = new ColumnGetterFactory(avroSchema, pageBuilder, timestampParsers, timestampUnits);
             ImmutableMap.Builder<String, BaseColumnGetter> columnGettersBuilder = ImmutableMap.builder();
             for (Column column : columns) {
                 BaseColumnGetter columnGetter = factory.newColumnGetter(column);
@@ -164,5 +174,18 @@ public class AvroParserPlugin
         catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private TimestampUnit[] newTimestampUnits(SchemaConfig columns) {
+        TimestampUnit[] units = new TimestampUnit[columns.getColumnCount()];
+        int i = 0;
+        for (ColumnConfig column : columns.getColumns()) {
+            if (column.getType() instanceof TimestampType) {
+                TimestampUnitConfig option = column.getOption().loadConfig(TimestampUnitConfig.class);
+                units[i] = option.getTimestampUnit();
+            }
+            i++;
+        }
+        return units;
     }
 }
