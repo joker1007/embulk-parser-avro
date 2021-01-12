@@ -21,7 +21,10 @@ targetCompatibility = 1.8
 dependencies {
     compile  "org.embulk:embulk-core:0.9.4"
     provided "org.embulk:embulk-core:0.9.4"
-    compile "org.apache.avro:avro:1.8.2"
+    compile "org.apache.avro:avro:1.10.1"
+    compile "com.github.luben:zstd-jni:1.4.5-12"
+    compile "org.tukaani:xz:1.8"
+    compile "org.xerial.snappy:snappy-java:1.1.8.1"
     testCompile "junit:junit:4.+"
 
     testCompile  "org.embulk:embulk-core:0.9.4:tests"
