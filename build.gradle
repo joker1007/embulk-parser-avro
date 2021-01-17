@@ -21,6 +21,7 @@ targetCompatibility = 1.8
 dependencies {
     compile  "org.embulk:embulk-core:0.9.4"
     provided "org.embulk:embulk-core:0.9.4"
+    compile "org.embulk:embulk-util-config:0.2.0"
     compile "org.apache.avro:avro:1.8.2"
     testCompile "junit:junit:4.+"
 
