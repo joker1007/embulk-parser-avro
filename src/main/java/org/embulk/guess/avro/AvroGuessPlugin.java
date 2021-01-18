@@ -8,10 +8,10 @@ import org.apache.avro.generic.GenericRecord;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigSource;
 import org.embulk.spi.Buffer;
+import org.embulk.spi.Exec;
 import org.embulk.spi.GuessPlugin;
 import org.embulk.spi.type.Type;
 import org.embulk.spi.type.Types;
-import org.embulk.util.config.ConfigMapperFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,9 +28,6 @@ public class AvroGuessPlugin
     private static final byte[] AVRO_HEADER = {0x4f, 0x62, 0x6a, 0x01};
 
     private static final Map<Schema.Type, Type> TYPE_MAP = new EnumMap<>(Schema.Type.class);
-
-    private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
-            ConfigMapperFactory.builder().addDefaultModules().build();
 
     static {
         TYPE_MAP.put(Schema.Type.STRING, Types.STRING);
@@ -70,7 +67,7 @@ public class AvroGuessPlugin
 
     @Override
     public ConfigDiff guess(ConfigSource config, Buffer sample) {
-        ConfigDiff configDiff = CONFIG_MAPPER_FACTORY.newConfigDiff();
+        ConfigDiff configDiff = Exec.newConfigDiff();
 
         byte[] bytes = copyBuffer(sample, AVRO_HEADER.length);
         if (!Arrays.equals(bytes, AVRO_HEADER)) {

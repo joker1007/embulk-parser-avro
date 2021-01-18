@@ -4,11 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.compress.utils.IOUtils;
+import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigSource;
 import org.embulk.spi.Buffer;
-import org.embulk.util.config.ConfigMapperFactory;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,16 +21,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TestAvroGuessPlugin {
-    private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
-            ConfigMapperFactory.builder().addDefaultModules().build();
 
-    private AvroGuessPlugin plugin;
+    @Rule
+    public EmbulkTestRuntime runtime = new EmbulkTestRuntime();
+
     private ConfigSource config;
+    private AvroGuessPlugin plugin;
 
     @Before
     public void setUp() {
         plugin = new AvroGuessPlugin();
-        config = CONFIG_MAPPER_FACTORY.newConfigSource();
+        config = runtime.getExec().newConfigSource();
     }
 
     @Test
