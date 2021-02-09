@@ -5,7 +5,7 @@
 ## Overview
 
 * **Plugin type**: parser
-* **Guess supported**: no
+* **Guess supported**: yes
 
 ## Configuration
 
@@ -102,7 +102,7 @@ out:
 }
 ```
 
-(If guess supported) you don't have to write `parser:` section in the configuration file. After writing `in:` section, you can let embulk guess `parser:` section using this command:
+You don't have to write `parser:` section in the configuration file. After writing `in:` section, you can let embulk guess `parser:` section using this command:
 
 ```
 $ embulk gem install embulk-parser-avro

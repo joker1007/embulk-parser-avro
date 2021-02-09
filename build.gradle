@@ -21,7 +21,9 @@ targetCompatibility = 1.8
 dependencies {
     compile  "org.embulk:embulk-core:0.9.4"
     provided "org.embulk:embulk-core:0.9.4"
-    compile "org.apache.avro:avro:1.10.1"
+    compile ("org.apache.avro:avro:1.10.1") {
+        exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
+    }
     compile "com.github.luben:zstd-jni:1.4.5-12"
     compile "org.tukaani:xz:1.8"
     compile "org.xerial.snappy:snappy-java:1.1.8.1"
