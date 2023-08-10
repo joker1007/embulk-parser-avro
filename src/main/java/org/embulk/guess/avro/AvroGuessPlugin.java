@@ -16,7 +16,6 @@ import org.embulk.util.config.ConfigMapperFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -69,13 +68,17 @@ public class AvroGuessPlugin implements GuessPlugin {
   @Override
   public ConfigDiff guess(ConfigSource config, Buffer sample) {
     ConfigDiff configDiff = configMapperFactory.newConfigDiff();
+    configDiff.merge(config);
+    ConfigDiff parserConfig = configDiff.getNestedOrSetEmpty("parser");
+
+    if (!"avro".equals(parserConfig.get(String.class, "type"))) {
+      return configDiff;
+    }
 
     byte[] bytes = copyBuffer(sample, AVRO_HEADER.length);
     if (!Arrays.equals(bytes, AVRO_HEADER)) {
       return configDiff;
     }
-    ConfigDiff parserConfig = configDiff.set("parser", Collections.emptyMap()).getNested("parser");
-    parserConfig.set("type", "avro");
 
     bytes = copyBuffer(sample, sample.capacity());
     DataFileReader<GenericRecord> reader;
@@ -92,6 +95,7 @@ public class AvroGuessPlugin implements GuessPlugin {
       columns.add(column);
     }
     parserConfig.set("columns", columns);
+    configDiff.setNested("parser", parserConfig);
 
     return configDiff;
   }

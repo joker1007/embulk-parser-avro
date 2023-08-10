@@ -182,7 +182,8 @@ public class AvroParserPlugin implements ParserPlugin {
                   TimestampFormatter.builder(
                           timestampColumnConfig
                               .getFormat()
-                              .orElse(task.getDefaultTimestampFormat()))
+                              .orElse(task.getDefaultTimestampFormat()),
+                          true)
                       .setDefaultZoneFromString(
                           timestampColumnConfig.getTimeZoneId().orElse(task.getDefaultTimeZoneId()))
                       .setDefaultDateFromString(

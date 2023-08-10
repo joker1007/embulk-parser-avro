@@ -26,7 +26,7 @@ embulkPlugin {
 
 dependencies {
     compileOnly  "org.embulk:embulk-api:0.10.43"
-    compileOnly  "org.embulk:embulk-spi:0.10.43"
+    compileOnly  "org.embulk:embulk-spi:0.11"
 
     // for compatibility with embulk-0.9.x
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.6.7"
@@ -42,7 +42,7 @@ dependencies {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
         exclude group: "com.fasterxml.jackson.datatype", module: "jackson-datatype-jdk8"
     }
-    implementation "org.embulk:embulk-util-timestamp:0.2.1"
+    implementation "org.embulk:embulk-util-timestamp:0.2.2"
     implementation("org.apache.avro:avro:1.11.2") {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
@@ -54,8 +54,10 @@ dependencies {
     testImplementation "junit:junit:4.+"
 
     testCompile "org.embulk:embulk-api:0.10.43"
-    testCompile "org.embulk:embulk-spi:0.10.43"
-    testCompile "org.embulk:embulk-core:0.10.43"
+    testCompile "org.embulk:embulk-spi:0.11"
+    testCompile "org.embulk:embulk-junit4:0.11.0"
+    testCompile "org.embulk:embulk-input-file:0.11.0"
+    testCompile "org.embulk:embulk-deps:0.11.0"
 
     // TODO: Remove them.
     // These `testCompile` are a tentative workaround. It will be covered in Embulk core's testing mechanism.

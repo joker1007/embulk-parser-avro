@@ -1,81 +1,101 @@
 package org.embulk.guess.avro;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.compress.utils.IOUtils;
-import org.embulk.EmbulkTestRuntime;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import org.embulk.EmbulkSystemProperties;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigSource;
-import org.embulk.spi.Buffer;
+import org.embulk.input.file.LocalFileInputPlugin;
+import org.embulk.parser.avro.AvroParserPlugin;
+import org.embulk.spi.FileInputPlugin;
+import org.embulk.spi.GuessPlugin;
+import org.embulk.spi.ParserPlugin;
+import org.embulk.test.TestingEmbulk;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public class TestAvroGuessPlugin {
 
-    @Rule
-    public EmbulkTestRuntime runtime = new EmbulkTestRuntime();
+  private static final EmbulkSystemProperties EMBULK_SYSTEM_PROPERTIES;
 
-    private ConfigSource config;
-    private AvroGuessPlugin plugin;
+  static {
+    final Properties properties = new Properties();
+    properties.setProperty("default_guess_plugins", "avro");
+    EMBULK_SYSTEM_PROPERTIES = EmbulkSystemProperties.of(properties);
+  }
 
-    @Before
-    public void setUp() {
-        plugin = new AvroGuessPlugin();
-        config = runtime.getExec().newConfigSource();
-    }
+  @Rule
+  public TestingEmbulk embulk =
+      TestingEmbulk.builder()
+          .setEmbulkSystemProperties(EMBULK_SYSTEM_PROPERTIES)
+          .registerPlugin(FileInputPlugin.class, "file", LocalFileInputPlugin.class)
+          .registerPlugin(ParserPlugin.class, "avro", AvroParserPlugin.class)
+          .registerPlugin(GuessPlugin.class, "avro", AvroGuessPlugin.class)
+          .build();
 
-    @Test
-    public void testAvroFile() throws IOException {
-        Map<String, String> expectedColumns = ImmutableMap.<String, String>builder()
-                .put("id", "long")
-                .put("code", "long")
-                .put("name", "string")
-                .put("description", "string")
-                .put("flag", "boolean")
-                .put("created_at", "string")
-                .put("created_at_utc", "double")
-                .put("price", "double")
-                .put("spec", "json")
-                .put("tags", "json")
-                .put("options", "json")
-                .put("item_type", "string")
-                .put("dummy", "string")
-                .build();
+  private ConfigSource config;
+  private AvroGuessPlugin plugin;
 
-        ConfigDiff configDiff = guess("items.avro");
+  @Before
+  public void setUp() {
+    plugin = new AvroGuessPlugin();
+    embulk.reset();
+  }
 
-        JsonNode parserNode = configDiff.getObjectNode().get("parser");
-        assertEquals("avro", parserNode.get("type").asText());
+  @Test
+  public void testAvroFile() throws IOException, URISyntaxException {
+    Map<String, String> expectedColumns = new HashMap<>();
+    expectedColumns.put("id", "long");
+    expectedColumns.put("code", "long");
+    expectedColumns.put("name", "string");
+    expectedColumns.put("description", "string");
+    expectedColumns.put("flag", "boolean");
+    expectedColumns.put("created_at", "string");
+    expectedColumns.put("created_at_utc", "double");
+    expectedColumns.put("price", "double");
+    expectedColumns.put("spec", "json");
+    expectedColumns.put("tags", "json");
+    expectedColumns.put("options", "json");
+    expectedColumns.put("item_type", "string");
+    expectedColumns.put("dummy", "string");
 
-        Iterator<JsonNode> it = parserNode.get("columns").elements();
-        while (it.hasNext()) {
-            JsonNode node = it.next();
-            String name = node.get("name").asText();
-            assertTrue(expectedColumns.containsKey(name));
-            assertEquals(expectedColumns.get(name), node.get("type").asText());
-        }
-    }
+    ConfigDiff configDiff = guess("items.avro");
 
-    @Test
-    public void testNonAvroFile() throws IOException {
-        ConfigDiff configDiff = guess("data.json");
-        ObjectNode objectNode = configDiff.getObjectNode();
-        assertEquals(0, objectNode.size());
-    }
+    assertEquals("avro", configDiff.get(String.class, "type"));
 
-    private ConfigDiff guess(String resource) throws IOException {
-        InputStream is = this.getClass().getResourceAsStream("/org/embulk/parser/avro/" + resource);
-        Buffer sample = Buffer.wrap(IOUtils.toByteArray(is));
-        return plugin.guess(config, sample);
-    }
+    List<Map> columns = configDiff.getListOf(Map.class, "columns");
+    columns.forEach(
+        columnConfig -> {
+          String name = (String) columnConfig.get("name");
+          assertTrue(expectedColumns.containsKey(name));
+          assertEquals(expectedColumns.get(name), (String) columnConfig.get("type"));
+        });
+  }
+
+  @Test
+  public void testNonAvroFile() throws URISyntaxException {
+    ConfigDiff configDiff = guess("data.json");
+    assertFalse(configDiff.has("columns"));
+  }
+
+  private ConfigDiff guess(String resource) throws URISyntaxException {
+    Path path =
+        Paths.get(this.getClass().getResource("/org/embulk/parser/avro/" + resource).toURI());
+    return embulk
+        .parserBuilder()
+        .parser(embulk.newConfig().set("type", "avro"))
+        .inputPath(path)
+        .guess();
+  }
 }
