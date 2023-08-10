@@ -4,52 +4,56 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.std.FromStringDeserializer;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class TimestampUnitDeserializer extends FromStringDeserializer<TimestampUnit>
-{
+public class TimestampUnitDeserializer extends FromStringDeserializer<TimestampUnit> {
 
-    public static ImmutableMap<String, TimestampUnit> mapping = ImmutableMap.<String, TimestampUnit>builder()
-            .put("Second", TimestampUnit.Second)
-            .put("second", TimestampUnit.Second)
-            .put("sec", TimestampUnit.Second)
-            .put("s", TimestampUnit.Second)
-            .put("MilliSecond", TimestampUnit.MilliSecond)
-            .put("millisecond", TimestampUnit.MilliSecond)
-            .put("milli_second", TimestampUnit.MilliSecond)
-            .put("milli", TimestampUnit.MilliSecond)
-            .put("msec", TimestampUnit.MilliSecond)
-            .put("ms", TimestampUnit.MilliSecond)
-            .put("MicroSecond", TimestampUnit.MicroSecond)
-            .put("microsecond", TimestampUnit.MicroSecond)
-            .put("micro_second", TimestampUnit.MicroSecond)
-            .put("micro", TimestampUnit.MicroSecond)
-            .put("usec", TimestampUnit.MicroSecond)
-            .put("us", TimestampUnit.MicroSecond)
-            .put("NanoSecond", TimestampUnit.NanoSecond)
-            .put("nanosecond", TimestampUnit.NanoSecond)
-            .put("nano_second", TimestampUnit.NanoSecond)
-            .put("nano", TimestampUnit.NanoSecond)
-            .put("nsec", TimestampUnit.NanoSecond)
-            .put("ns", TimestampUnit.NanoSecond)
-            .build();
+  public static final Map<String, TimestampUnit> MAPPING;
 
-    public TimestampUnitDeserializer() {
-        super(TimestampUnit.class);
+  static {
+    MAPPING = new HashMap<>();
+    MAPPING.put("Second", TimestampUnit.Second);
+    MAPPING.put("second", TimestampUnit.Second);
+    MAPPING.put("sec", TimestampUnit.Second);
+    MAPPING.put("s", TimestampUnit.Second);
+    MAPPING.put("MilliSecond", TimestampUnit.MilliSecond);
+    MAPPING.put("millisecond", TimestampUnit.MilliSecond);
+    MAPPING.put("milli_second", TimestampUnit.MilliSecond);
+    MAPPING.put("milli", TimestampUnit.MilliSecond);
+    MAPPING.put("msec", TimestampUnit.MilliSecond);
+    MAPPING.put("ms", TimestampUnit.MilliSecond);
+    MAPPING.put("MicroSecond", TimestampUnit.MicroSecond);
+    MAPPING.put("microsecond", TimestampUnit.MicroSecond);
+    MAPPING.put("micro_second", TimestampUnit.MicroSecond);
+    MAPPING.put("micro", TimestampUnit.MicroSecond);
+    MAPPING.put("usec", TimestampUnit.MicroSecond);
+    MAPPING.put("us", TimestampUnit.MicroSecond);
+    MAPPING.put("NanoSecond", TimestampUnit.NanoSecond);
+    MAPPING.put("nanosecond", TimestampUnit.NanoSecond);
+    MAPPING.put("nano_second", TimestampUnit.NanoSecond);
+    MAPPING.put("nano", TimestampUnit.NanoSecond);
+    MAPPING.put("nsec", TimestampUnit.NanoSecond);
+    MAPPING.put("ns", TimestampUnit.NanoSecond);
+  }
+
+  public TimestampUnitDeserializer() {
+    super(TimestampUnit.class);
+  }
+
+  @Override
+  protected TimestampUnit _deserialize(String value, DeserializationContext ctxt)
+      throws IOException {
+    TimestampUnit unit = MAPPING.get(value);
+    if (unit == null) {
+      throw new JsonMappingException(
+          String.format(
+              "Unknown type name '%s'. Supported types are: %s",
+              value, String.join(", ", MAPPING.keySet())));
     }
-
-    @Override
-    protected TimestampUnit _deserialize(String value, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-        TimestampUnit unit = mapping.get(value);
-        if (unit == null) {
-            throw new JsonMappingException(
-                    String.format("Unknown type name '%s'. Supported types are: %s",
-                            value,
-                            Joiner.on(", ").join(mapping.keySet())));
-        }
-        return unit;
-    }
+    return unit;
+  }
 }

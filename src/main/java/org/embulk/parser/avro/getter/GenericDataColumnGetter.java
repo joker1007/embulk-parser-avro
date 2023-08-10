@@ -1,13 +1,17 @@
 package org.embulk.parser.avro.getter;
 
+import org.embulk.parser.avro.TimestampUnit;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
-import org.embulk.spi.time.TimestampParser;
+import org.embulk.util.timestamp.TimestampFormatter;
 import org.msgpack.value.Value;
 
+import java.util.Map;
+
 public class GenericDataColumnGetter extends BaseColumnGetter {
-    public GenericDataColumnGetter(PageBuilder pageBuilder, TimestampParser[] timestampParsers) {
-        super(pageBuilder, timestampParsers);
+
+    public GenericDataColumnGetter(PageBuilder pageBuilder, Map<String, TimestampFormatter> timestampFormatters, Map<String, TimestampUnit> timestampUnits) {
+        super(pageBuilder, timestampFormatters, timestampUnits);
     }
 
     @Override
@@ -28,6 +32,7 @@ public class GenericDataColumnGetter extends BaseColumnGetter {
         }
         else {
             Value converted = AvroGenericDataConverter.convert(value);
+            // for v0.9.x
             pageBuilder.setJson(column, converted);
         }
     }
