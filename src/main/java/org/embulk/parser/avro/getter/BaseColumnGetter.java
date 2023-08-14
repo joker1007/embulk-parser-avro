@@ -1,13 +1,12 @@
 package org.embulk.parser.avro.getter;
 
+import java.util.Map;
 import org.embulk.parser.avro.TimestampUnit;
 import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
 import org.embulk.util.timestamp.TimestampFormatter;
-
-import java.util.Map;
 
 public class BaseColumnGetter implements ColumnVisitor {
   protected final PageBuilder pageBuilder;

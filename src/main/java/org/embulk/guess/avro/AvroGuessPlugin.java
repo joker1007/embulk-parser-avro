@@ -1,5 +1,12 @@
 package org.embulk.guess.avro;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.SeekableByteArrayInput;
@@ -12,14 +19,6 @@ import org.embulk.spi.GuessPlugin;
 import org.embulk.spi.type.Type;
 import org.embulk.spi.type.Types;
 import org.embulk.util.config.ConfigMapperFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class AvroGuessPlugin implements GuessPlugin {
 

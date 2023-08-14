@@ -1,13 +1,12 @@
 package org.embulk.parser.avro.getter;
 
+import java.util.Map;
 import org.apache.avro.Schema;
 import org.embulk.parser.avro.TimestampUnit;
 import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.PageBuilder;
 import org.embulk.util.timestamp.TimestampFormatter;
-
-import java.util.Map;
 
 public class ColumnGetterFactory {
   private org.apache.avro.Schema avroSchema;

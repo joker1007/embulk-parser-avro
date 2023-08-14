@@ -1,7 +1,6 @@
 package org.embulk.parser.avro.getter;
 
 import java.util.Map;
-
 import org.embulk.parser.avro.TimestampUnit;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
