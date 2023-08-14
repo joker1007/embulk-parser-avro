@@ -1,5 +1,7 @@
 plugins {
     id "java"
+    id "maven-publish"
+    id "signing"
     id "org.embulk.embulk-plugins" version "0.5.5"
     id "com.diffplug.spotless" version "6.13.0"
 }
@@ -78,52 +80,103 @@ classes {
     dependsOn tasks.spotlessApply
 }
 
-task classpath(type: Copy, dependsOn: ["jar"]) {
-    doFirst { file("classpath").deleteDir() }
-    from (configurations.runtime - configurations.provided + files(jar.archivePath))
-    into "classpath"
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
-clean { delete "classpath" }
 
-//task gem(type: JRubyExec, dependsOn: ["gemspec", "classpath"]) {
-//    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "build"
-//    script "${project.name}.gemspec"
-//    doLast { ant.move(file: "${project.name}-${project.version}.gem", todir: "pkg") }
-//}
-//
-//task gemPush(type: JRubyExec, dependsOn: ["gem"]) {
-//    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "push"
-//    script "pkg/${project.name}-${project.version}.gem"
-//}
-//
-//task "package"(dependsOn: ["gemspec", "classpath"]) << {
-//    println "> Build succeeded."
-//    println "> You can run embulk with '-L ${file(".").absolutePath}' argument."
-//}
+jar {
+    from rootProject.file("LICENSE.txt")
+}
 
-//task gemspec {
-//    ext.gemspecFile = file("${project.name}.gemspec")
-//    inputs.file "build.gradle"
-//    outputs.file gemspecFile
-//    doLast { gemspecFile.write($/
-//Gem::Specification.new do |spec|
-//  spec.name          = "${project.name}"
-//  spec.version       = "${project.version}"
-//  spec.authors       = ["joker1007"]
-//  spec.summary       = %[Avro parser plugin for Embulk]
-//  spec.description   = %[Parses Avro files read by other file input plugins.]
-//  spec.email         = ["kakyoin.hierophant@gmail.com"]
-//  spec.licenses      = ["MIT"]
-//  spec.homepage      = "https://github.com/joker1007/embulk-parser-avro"
-//
-//  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
-//  spec.test_files    = spec.files.grep(%r"^(test|spec)/")
-//  spec.require_paths = ["lib"]
-//
-//  spec.add_development_dependency 'bundler', ['~> 1.0']
-//  spec.add_development_dependency 'rake', ['>= 10.0']
-//end
-///$)
-//    }
-//}
-clean { delete "${project.name}.gemspec" }
+javadocJar {
+    from rootProject.file("LICENSE.txt")
+}
+
+sourcesJar {
+    from rootProject.file("LICENSE.txt")
+}
+
+
+task generateEmbulkProperties {
+    doLast {
+        mkdir ".embulk"
+        def f = file(".embulk/embulk.properties")
+        f.write("m2_repo=${System.properties["user.home"]}/.m2/repository\nplugins.parser.avro=maven:${project.group}:avro:${project.version}\n")
+        f.append("jruby=file://${System.getenv("JRUBY_PATH")}\n")
+    }
+}
+
+gem {
+    from("LICENSE.txt")
+    authors = [ "joker1007" ]
+    email = [ "kakyoin.hierophant@gmail.com" ]
+    description = "Parses Avro files read by other file input plugins."
+    summary = "Avro parser plugin for Embulk"
+    homepage = "https://github.com/joker1007/embulk-parser-avro"
+    licenses = [ "MIT" ]
+}
+
+gemPush {
+    host = "https://rubygems.org"
+}
+
+publishing {
+    publications {
+        embulkPluginMaven(MavenPublication) {  // Publish it with "publishEmbulkPluginMavenPublicationToMavenRepository".
+            from components.java  // Must be "components.java". The dependency modification works only for it.
+            pom {
+                name = "embulk-parser-avro"
+                packaging = "jar"
+                description = "Embulk parser plugin for Apache Avro"
+                url = "https://github.com/joker1007/embulk-parser-avro"
+
+                licenses {
+                    license {
+                        // http://central.sonatype.org/pages/requirements.html#license-information
+                        name = "MIT License"
+                        url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git://github.com/joker1007/embulk-parser-avro.git"
+                    developerConnection = "scm:git@github.com:joker1007/embulk-parser-avro.git"
+                    url = "https://github.com/joker1007/embulk-parser-avro"
+                }
+
+                developers {
+                    developer {
+                        id = "joker1007"
+                        name = "Tomohiro Hashidate"
+                        email = "kakyoin.hierophant@gmail.com"
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {  // publishMavenPublicationToMavenCentralRepository
+            name = "mavenCentral"
+            if (project.version.endsWith("-SNAPSHOT")) {
+                url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            } else {
+                url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            }
+
+            credentials {
+                username = project.hasProperty("ossrhUsername") ? ossrhUsername : ""
+                password = project.hasProperty("ossrhPassword") ? ossrhPassword : ""
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.embulkPluginMaven
+}
+
+tasks.withType(Sign) {
+    onlyIf { System.getenv().get("SKIP_SIGNING") == null }
+}

@@ -1,0 +1,173 @@
+# Java Gradle CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-java/ for more details
+#
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:11-jdk
+
+    working_directory: ~/embulk-parser-avro
+
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: ./gradlew dependencies
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
+      # run tests!
+      - run: ./gradlew test
+      - store_test_results:
+          path: build/test-results
+
+  embulk-0.9:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/embulk-parser-avro
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+      EMBULK_VERSION: 0.9.23
+      EMBULK_PATH: embulk
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - embulk-0.9.23
+
+      - run: curl -o ./${EMBULK_PATH} -L https://dl.embulk.org/embulk-${EMBULK_VERSION}.jar
+
+      - save_cache:
+          paths:
+            - ~/embulk
+          key: embulk-0.9.23
+
+      - run: chmod +x ./${EMBULK_PATH}
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: ./gradlew dependencies
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
+      - run: ./gradlew gem
+
+      - run:
+          name: run-embulk
+          command: ~/embulk-parser-avro/${EMBULK_PATH} run -I ~/embulk-parser-avro/build/gemContents/lib config_acceptance.yml
+          working_directory: ~/embulk-parser-avro/src/test/resources/org/embulk/parser/avro
+
+  embulk-0.11:
+    docker:
+      - image: circleci/openjdk:11-jdk
+
+    working_directory: ~/embulk-parser-avro
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+      SKIP_SIGNING: true
+      EMBULK_VERSION: 0.11.0
+      EMBULK_PATH: embulk.jar
+      JRUBY_VERSION: "9.3.10.0"
+      JRUBY_PATH: jruby.jar
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - embulk-0.11.0
+
+      - run: curl -o ./${EMBULK_PATH} -L https://dl.embulk.org/embulk-${EMBULK_VERSION}.jar
+
+      - save_cache:
+          paths:
+            - ~/embulk-parser-avro/embulk.jar
+          key: embulk-0.11.0
+
+      - restore_cache:
+          keys:
+            - jruby-9.3.10.0
+
+      - run: curl -o ./${JRUBY_PATH} -L https://repo1.maven.org/maven2/org/jruby/jruby-complete/${JRUBY_VERSION}/jruby-complete-${JRUBY_VERSION}.jar
+
+      - save_cache:
+          paths:
+            - ~/embulk-parser-avro/jruby.jar
+          key: jruby-9.3.10.0
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: ./gradlew dependencies
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
+      - run: ./gradlew publishEmbulkPluginMavenPublicationToMavenLocal
+
+      - run: cp build/publications/embulkPluginMaven/pom-default.xml pom.xml
+
+      - restore_cache:
+          keys:
+            - m2-v2-{{ checksum "pom.xml" }}
+
+      - run: mvn dependency:resolve
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: m2-v2-{{ checksum "pom.xml" }}
+
+      - run: ./gradlew generateEmbulkProperties
+      - run: cat .embulk/embulk.properties
+
+      - run:
+          name: run-embulk
+          command: java -jar ~/embulk-parser-avro/${EMBULK_PATH} run config_acceptance.yml
+          working_directory: ~/embulk-parser-avro/src/test/resources/org/embulk/parser/avro
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - build
+      - embulk-0.9
+      - embulk-0.11

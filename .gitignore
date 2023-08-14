@@ -13,3 +13,5 @@ out/
 .project
 
 *.iml
+
+.envrc

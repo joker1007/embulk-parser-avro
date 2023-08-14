@@ -1,0 +1,22 @@
+in:
+  type: file
+  path_prefix: items.avro
+  parser:
+    type: avro
+    avsc: item.avsc
+    columns:
+      - {name: "id", type: "long"}
+      - {name: "code", type: "string"}
+      - {name: "name", type: "string"}
+      - {name: "description", type: "string"}
+      - {name: "flag", type: "boolean"}
+      - {name: "price", type: "long"}
+      - {name: "item_type", type: "string"}
+      - {name: "tags", type: "json"}
+      - {name: "options", type: "json"}
+      - {name: "spec", type: "json"}
+      - {name: "created_at", type: "timestamp", format: "%Y-%m-%dT%H:%M:%S%:z"}
+      - {name: "created_at_utc", type: "timestamp", timestamp_unit: "second"}
+
+out:
+  type: stdout
