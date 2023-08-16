@@ -1,182 +1,86 @@
 plugins {
     id "java"
-    id "maven-publish"
-    id "signing"
-    id "org.embulk.embulk-plugins" version "0.5.5"
     id "com.diffplug.spotless" version "6.13.0"
 }
 
-repositories {
-    mavenCentral()
-    jcenter()
-}
-configurations {
-    provided
-}
-
-group = "io.github.joker1007"
-version = "0.5.0"
-description = "Embulk parser plugin for Apache Avro format"
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-embulkPlugin {
-    mainClass = "org.embulk.parser.avro.AvroParserPlugin"
-    category = "parser"
-    type = "avro"
-}
-
-dependencies {
-    compileOnly  "org.embulk:embulk-api:0.10.43"
-    compileOnly  "org.embulk:embulk-spi:0.11"
-
-    // for compatibility with embulk-0.9.x
-    implementation "com.fasterxml.jackson.core:jackson-annotations:2.6.7"
-    implementation "com.fasterxml.jackson.core:jackson-core:2.6.7"
-    implementation "com.fasterxml.jackson.core:jackson-databind:2.6.7"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7"
-
-    implementation "org.embulk:embulk-util-file:0.1.3"
-    implementation "org.embulk:embulk-util-json:0.1.1"
-    implementation("org.embulk:embulk-util-config:0.3.1") {
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
-        exclude group: "com.fasterxml.jackson.datatype", module: "jackson-datatype-jdk8"
-    }
-    implementation "org.embulk:embulk-util-timestamp:0.2.2"
-    implementation("org.apache.avro:avro:1.11.2") {
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
-    }
-    implementation "com.github.luben:zstd-jni:1.4.5-12"
-    implementation "org.tukaani:xz:1.8"
-    implementation "org.xerial.snappy:snappy-java:1.1.8.1"
-    testImplementation "junit:junit:4.+"
-
-    testCompile "org.embulk:embulk-api:0.10.43"
-    testCompile "org.embulk:embulk-spi:0.11"
-    testCompile "org.embulk:embulk-junit4:0.11.0"
-    testCompile "org.embulk:embulk-input-file:0.11.0"
-    testCompile "org.embulk:embulk-deps:0.11.0"
-
-    // TODO: Remove them.
-    // These `testCompile` are a tentative workaround. It will be covered in Embulk core's testing mechanism.
-    testCompile "org.embulk:embulk-deps:0.10.29"
-}
-
-spotless {
-    java {
-        importOrder()
-        removeUnusedImports()
-
-        googleJavaFormat()
-    }
-}
-
-classes {
-    dependsOn tasks.spotlessApply
-}
-
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
-
-jar {
-    from rootProject.file("LICENSE.txt")
-}
-
-javadocJar {
-    from rootProject.file("LICENSE.txt")
-}
-
-sourcesJar {
-    from rootProject.file("LICENSE.txt")
-}
-
-
-task generateEmbulkProperties {
-    doLast {
-        mkdir ".embulk"
-        def f = file(".embulk/embulk.properties")
-        f.write("m2_repo=${System.properties["user.home"]}/.m2/repository\nplugins.parser.avro=maven:${project.group}:avro:${project.version}\n")
-        f.append("jruby=file://${System.getenv("JRUBY_PATH")}\n")
-    }
-}
-
-gem {
-    from("LICENSE.txt")
-    authors = [ "joker1007" ]
-    email = [ "kakyoin.hierophant@gmail.com" ]
-    description = "Parses Avro files read by other file input plugins."
-    summary = "Avro parser plugin for Embulk"
-    homepage = "https://github.com/joker1007/embulk-parser-avro"
-    licenses = [ "MIT" ]
-}
-
-gemPush {
-    host = "https://rubygems.org"
-}
-
-publishing {
-    publications {
-        embulkPluginMaven(MavenPublication) {  // Publish it with "publishEmbulkPluginMavenPublicationToMavenRepository".
-            from components.java  // Must be "components.java". The dependency modification works only for it.
-            pom {
-                name = "embulk-parser-avro"
-                packaging = "jar"
-                description = "Embulk parser plugin for Apache Avro"
-                url = "https://github.com/joker1007/embulk-parser-avro"
-
-                licenses {
-                    license {
-                        // http://central.sonatype.org/pages/requirements.html#license-information
-                        name = "MIT License"
-                        url = "https://opensource.org/licenses/MIT"
-                    }
-                }
-
-                scm {
-                    connection = "scm:git://github.com/joker1007/embulk-parser-avro.git"
-                    developerConnection = "scm:git@github.com:joker1007/embulk-parser-avro.git"
-                    url = "https://github.com/joker1007/embulk-parser-avro"
-                }
-
-                developers {
-                    developer {
-                        id = "joker1007"
-                        name = "Tomohiro Hashidate"
-                        email = "kakyoin.hierophant@gmail.com"
-                    }
-                }
-            }
-        }
-    }
+allprojects {
     repositories {
-        maven {  // publishMavenPublicationToMavenCentralRepository
-            name = "mavenCentral"
-            if (project.version.endsWith("-SNAPSHOT")) {
-                url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-            } else {
-                url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            }
-
-            credentials {
-                username = project.hasProperty("ossrhUsername") ? ossrhUsername : ""
-                password = project.hasProperty("ossrhPassword") ? ossrhPassword : ""
-            }
-        }
+        mavenCentral()
     }
 }
 
-signing {
-    useGpgCmd()
-    sign publishing.publications.embulkPluginMaven
-}
+subprojects {
+    apply plugin: "java"
+    apply plugin: "jacoco"
+    apply plugin: "com.diffplug.spotless"
 
-tasks.withType(Sign) {
-    onlyIf { System.getenv().get("SKIP_SIGNING") == null }
+    dependencies {
+        compileOnly "org.embulk:embulk-api:0.10.43"
+        compileOnly "org.embulk:embulk-spi:0.11"
+
+        // for compatibility with embulk-0.9.x
+        implementation "com.fasterxml.jackson.core:jackson-annotations:2.6.7"
+        implementation "com.fasterxml.jackson.core:jackson-core:2.6.7"
+        implementation "com.fasterxml.jackson.core:jackson-databind:2.6.7"
+        implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7"
+
+        implementation "org.embulk:embulk-util-file:0.1.3"
+        implementation "org.embulk:embulk-util-json:0.1.1"
+        implementation("org.embulk:embulk-util-config:0.3.1") {
+            exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
+            exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
+            exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
+            exclude group: "com.fasterxml.jackson.datatype", module: "jackson-datatype-jdk8"
+        }
+        implementation "org.embulk:embulk-util-timestamp:0.2.2"
+        implementation("org.apache.avro:avro:1.11.2") {
+            exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
+            exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
+            exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
+        }
+        implementation "com.github.luben:zstd-jni:1.4.5-12"
+        implementation "org.tukaani:xz:1.8"
+        implementation "org.xerial.snappy:snappy-java:1.1.8.1"
+        testImplementation "junit:junit:4.+"
+
+        testCompile "org.embulk:embulk-api:0.10.43"
+        testCompile "org.embulk:embulk-spi:0.11"
+        testCompile "org.embulk:embulk-junit4:0.11.0"
+        testCompile "org.embulk:embulk-input-file:0.11.0"
+        testCompile "org.embulk:embulk-deps:0.11.0"
+
+        // TODO: Remove them.
+        // These `testCompile` are a tentative workaround. It will be covered in Embulk core's testing mechanism.
+        testCompile "org.embulk:embulk-deps:0.10.29"
+    }
+
+    spotless {
+        java {
+            importOrder()
+            removeUnusedImports()
+
+            googleJavaFormat()
+        }
+    }
+
+    classes {
+        dependsOn tasks.spotlessApply
+    }
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    jar {
+        from rootProject.file("LICENSE.txt")
+    }
+
+    javadocJar {
+        from rootProject.file("LICENSE.txt")
+    }
+
+    sourcesJar {
+        from rootProject.file("LICENSE.txt")
+    }
 }
