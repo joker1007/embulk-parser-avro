@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +13,6 @@ import java.util.Map;
 import java.util.Properties;
 import org.embulk.EmbulkSystemProperties;
 import org.embulk.config.ConfigDiff;
-import org.embulk.config.ConfigSource;
 import org.embulk.input.file.LocalFileInputPlugin;
 import org.embulk.parser.avro.AvroParserPlugin;
 import org.embulk.spi.FileInputPlugin;
@@ -44,17 +42,13 @@ public class TestAvroGuessPlugin {
           .registerPlugin(GuessPlugin.class, "avro", AvroGuessPlugin.class)
           .build();
 
-  private ConfigSource config;
-  private AvroGuessPlugin plugin;
-
   @Before
   public void setUp() {
-    plugin = new AvroGuessPlugin();
     embulk.reset();
   }
 
   @Test
-  public void testAvroFile() throws IOException, URISyntaxException {
+  public void testAvroFile() throws URISyntaxException {
     Map<String, String> expectedColumns = new HashMap<>();
     expectedColumns.put("id", "long");
     expectedColumns.put("code", "long");

@@ -181,13 +181,7 @@ public class TestAvroParserPlugin {
 
   private void transaction(ConfigSource config, final FileInput input) {
     plugin.transaction(
-        config,
-        new ParserPlugin.Control() {
-          @Override
-          public void run(TaskSource taskSource, Schema schema) {
-            plugin.run(taskSource, schema, input, output);
-          }
-        });
+        config, (taskSource, schema) -> plugin.run(taskSource, schema, input, output));
   }
 
   private FileInput fileInput(File file) throws Exception {
