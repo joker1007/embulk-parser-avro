@@ -6,7 +6,7 @@ plugins {
 
 group = "io.github.joker1007"
 version = "0.5.0"
-description = "Embulk parser plugin for Apache Avro format"
+description = "Embulk guess plugin for Apache Avro format"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -40,7 +40,7 @@ publishing {
         embulkPluginMaven(MavenPublication) {  // Publish it with "publishEmbulkPluginMavenPublicationToMavenRepository".
             from components.java  // Must be "components.java". The dependency modification works only for it.
             pom {
-                name = "embulk-parser-avro"
+                name = "embulk-guess-avro"
                 packaging = "jar"
                 description = "Embulk guess plugin for Apache Avro"
                 url = "https://github.com/joker1007/embulk-parser-avro"
