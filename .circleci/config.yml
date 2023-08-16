@@ -2,7 +2,7 @@
 #
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
-version: 2
+version: 2.1
 
 jobs:
   build:
@@ -35,10 +35,13 @@ jobs:
 
       # run tests!
       - run: ./gradlew test
-      - store_test_results:
-          path: build/test-results
 
-  embulk-0.9:
+      - store_test_results:
+          path: ~/embulk-parser-avro/embulk-parser-avro/build/test-results
+      - store_test_results:
+          path: ~/embulk-parser-avro/embulk-guess-avro/build/test-results
+
+  embulk-09:
     docker:
       - image: circleci/openjdk:8-jdk
 
@@ -48,23 +51,27 @@ jobs:
       JVM_OPTS: -Xmx3200m
       TERM: dumb
       EMBULK_VERSION: 0.9.23
-      EMBULK_PATH: embulk
 
     steps:
       - checkout
 
       - restore_cache:
           keys:
-            - embulk-0.9.23
+            - embulk-v1-0.9.23
 
-      - run: curl -o ./${EMBULK_PATH} -L https://dl.embulk.org/embulk-${EMBULK_VERSION}.jar
+      - run: |
+          if [ -f ~/embulk ]; then
+            echo "~/embulk exists"
+          else
+            curl -o ~/embulk -L https://dl.embulk.org/embulk-${EMBULK_VERSION}.jar
+          fi
 
       - save_cache:
           paths:
             - ~/embulk
-          key: embulk-0.9.23
+          key: embulk-v1-0.9.23
 
-      - run: chmod +x ./${EMBULK_PATH}
+      - run: chmod +x ~/embulk
 
       # Download and cache dependencies
       - restore_cache:
@@ -83,11 +90,15 @@ jobs:
       - run: ./gradlew gem
 
       - run:
-          name: run-embulk
-          command: ~/embulk-parser-avro/${EMBULK_PATH} run -I ~/embulk-parser-avro/build/gemContents/lib config_acceptance.yml
-          working_directory: ~/embulk-parser-avro/src/test/resources/org/embulk/parser/avro
+          name: run-embulk-parser
+          command: ~/embulk run -I ~/embulk-parser-avro/embulk-parser-avro/build/gemContents/lib config_acceptance.yml
+          working_directory: ~/embulk-parser-avro/resources
+      - run:
+          name: run-embulk-guess
+          command: ~/embulk guess -I ~/embulk-parser-avro/embulk-guess-avro/build/gemContents/lib -I ~/embulk-parser-avro/embulk-parser-avro/build/gemContents/lib config_guess_acceptance.yml
+          working_directory: ~/embulk-parser-avro/resources
 
-  embulk-0.11:
+  embulk-011:
     docker:
       - image: circleci/openjdk:11-jdk
 
@@ -98,34 +109,43 @@ jobs:
       TERM: dumb
       SKIP_SIGNING: true
       EMBULK_VERSION: 0.11.0
-      EMBULK_PATH: embulk.jar
       JRUBY_VERSION: "9.3.10.0"
-      JRUBY_PATH: jruby.jar
+      JRUBY_PATH: ~/jruby.jar
 
     steps:
       - checkout
 
       - restore_cache:
           keys:
-            - embulk-0.11.0
+            - embulk-v1-0.11.0
 
-      - run: curl -o ./${EMBULK_PATH} -L https://dl.embulk.org/embulk-${EMBULK_VERSION}.jar
+      - run: |
+          if [ -f ~/embulk.jar ]; then
+            echo "~/embulk.jar exists"
+          else
+            curl -o ~/embulk.jar -L https://dl.embulk.org/embulk-${EMBULK_VERSION}.jar
+          fi
 
       - save_cache:
           paths:
-            - ~/embulk-parser-avro/embulk.jar
-          key: embulk-0.11.0
+            - ~/embulk.jar
+          key: embulk-v1-0.11.0
 
       - restore_cache:
           keys:
-            - jruby-9.3.10.0
+            - jruby-v1-9.3.10.0
 
-      - run: curl -o ./${JRUBY_PATH} -L https://repo1.maven.org/maven2/org/jruby/jruby-complete/${JRUBY_VERSION}/jruby-complete-${JRUBY_VERSION}.jar
+      - run: |
+          if [ -f ~/jruby.jar ]; then
+            echo "~/jruby.jar exists"
+          else
+            curl -o ~/jruby.jar -L https://repo1.maven.org/maven2/org/jruby/jruby-complete/${JRUBY_VERSION}/jruby-complete-${JRUBY_VERSION}.jar
+          fi
 
       - save_cache:
           paths:
-            - ~/embulk-parser-avro/jruby.jar
-          key: jruby-9.3.10.0
+            - ~/jruby.jar
+          key: jruby-v1-9.3.10.0
 
       # Download and cache dependencies
       - restore_cache:
@@ -143,7 +163,7 @@ jobs:
 
       - run: ./gradlew publishEmbulkPluginMavenPublicationToMavenLocal
 
-      - run: cp build/publications/embulkPluginMaven/pom-default.xml pom.xml
+      - run: cp embulk-parser-avro/build/publications/embulkPluginMaven/pom-default.xml pom.xml
 
       - restore_cache:
           keys:
@@ -160,14 +180,18 @@ jobs:
       - run: cat .embulk/embulk.properties
 
       - run:
-          name: run-embulk
-          command: java -jar ~/embulk-parser-avro/${EMBULK_PATH} run config_acceptance.yml
-          working_directory: ~/embulk-parser-avro/src/test/resources/org/embulk/parser/avro
+          name: run-embulk-parser
+          command: java -jar ~/embulk.jar run config_acceptance.yml
+          working_directory: ~/embulk-parser-avro/resources
+      - run:
+          name: run-embulk-guess
+          command: java -jar ~/embulk.jar guess config_guess_acceptance.yml
+          working_directory: ~/embulk-parser-avro/resources
 
 workflows:
-  version: 2
+  version: 2.1
   test:
     jobs:
       - build
-      - embulk-0.9
-      - embulk-0.11
+      - embulk-09
+      - embulk-011

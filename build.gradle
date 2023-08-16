@@ -9,6 +9,17 @@ allprojects {
     }
 }
 
+task generateEmbulkProperties {
+    doLast {
+        mkdir ".embulk"
+        def f = file(".embulk/embulk.properties")
+        f.write("m2_repo=${System.properties["user.home"]}/.m2/repository\n")
+        f.append("plugins.parser.avro=maven:${project(":embulk-parser-avro").group}:avro:${project(":embulk-parser-avro").version}\n")
+        f.append("plugins.guess.avro=maven:${project(":embulk-guess-avro").group}:avro:${project(":embulk-guess-avro").version}\n")
+        f.append("jruby=file://${System.getenv("JRUBY_PATH")}\n")
+    }
+}
+
 subprojects {
     apply plugin: "java"
     apply plugin: "jacoco"

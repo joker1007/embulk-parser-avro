@@ -17,11 +17,8 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import org.embulk.config.ConfigSource;
-import org.embulk.config.TaskSource;
 import org.embulk.spi.ColumnConfig;
 import org.embulk.spi.FileInput;
-import org.embulk.spi.ParserPlugin;
-import org.embulk.spi.Schema;
 import org.embulk.spi.SchemaConfig;
 import org.embulk.spi.type.Type;
 import org.embulk.spi.util.InputStreamFileInput;
@@ -49,6 +46,10 @@ public class TestAvroParserPlugin {
     recreatePageOutput();
   }
 
+  private static String getResourcePath(String name) {
+    return ClassLoader.getSystemResource(name).getPath();
+  }
+
   @Test
   public void useNormal() throws Exception {
     SchemaConfig schema =
@@ -67,12 +68,9 @@ public class TestAvroParserPlugin {
             column("created_at_utc", TIMESTAMP, config().set("timestamp_unit", "second")));
 
     ConfigSource config =
-        this.config
-            .deepCopy()
-            .set("columns", schema)
-            .set("avsc", this.getClass().getResource("item.avsc").getPath());
+        this.config.deepCopy().set("columns", schema).set("avsc", getResourcePath("item.avsc"));
 
-    transaction(config, fileInput(new File(this.getClass().getResource("items.avro").getPath())));
+    transaction(config, fileInput(new File(ClassLoader.getSystemResource("items.avro").getPath())));
 
     List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
     assertEquals(6, records.size());
@@ -107,12 +105,9 @@ public class TestAvroParserPlugin {
             column("timestamp_double_nano", TIMESTAMP, config().set("timestamp_unit", "nano")));
 
     ConfigSource config =
-        this.config
-            .deepCopy()
-            .set("columns", schema)
-            .set("avsc", this.getClass().getResource("item2.avsc").getPath());
+        this.config.deepCopy().set("columns", schema).set("avsc", getResourcePath("item2.avsc"));
 
-    transaction(config, fileInput(new File(this.getClass().getResource("items2.avro").getPath())));
+    transaction(config, fileInput(new File(getResourcePath("items2.avro"))));
 
     List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
     assertEquals(1, records.size());
@@ -148,10 +143,9 @@ public class TestAvroParserPlugin {
             column("item_type", STRING),
             column("dummy", STRING));
 
-    ConfigSource config =
-        this.config.deepCopy().set("avsc", this.getClass().getResource("item.avsc").getPath());
+    ConfigSource config = this.config.deepCopy().set("avsc", getResourcePath("item.avsc"));
 
-    transaction(config, fileInput(new File(this.getClass().getResource("items.avro").getPath())));
+    transaction(config, fileInput(new File(getResourcePath("items.avro"))));
 
     List<Object[]> records = Pages.toObjects(schema.toSchema(), output.pages);
     assertEquals(6, records.size());

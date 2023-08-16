@@ -17,15 +17,6 @@ embulkPlugin {
     type = "avro"
 }
 
-task generateEmbulkProperties {
-    doLast {
-        mkdir ".embulk"
-        def f = file(".embulk/embulk.properties")
-        f.write("m2_repo=${System.properties["user.home"]}/.m2/repository\nplugins.parser.avro=maven:${project.group}:avro:${project.version}\n")
-        f.append("jruby=file://${System.getenv("JRUBY_PATH")}\n")
-    }
-}
-
 gem {
     from(rootProject.file("LICENSE.txt"))
     authors = [ "joker1007" ]

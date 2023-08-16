@@ -84,8 +84,7 @@ public class TestAvroGuessPlugin {
   }
 
   private ConfigDiff guess(String resource) throws URISyntaxException {
-    Path path =
-        Paths.get(this.getClass().getResource("/org/embulk/parser/avro/" + resource).toURI());
+    Path path = Paths.get(ClassLoader.getSystemResource(resource).toURI());
     return embulk
         .parserBuilder()
         .parser(embulk.newConfig().set("type", "avro"))

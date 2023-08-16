@@ -15,29 +15,10 @@ dependencies {
     testImplementation project(":embulk-parser-avro")
 }
 
-sourceSets {
-    test {
-        resources {
-            srcDirs += [
-                    project(':embulk-parser-avro').sourceSets.test.resources
-            ]
-        }
-    }
-}
-
 embulkPlugin {
     mainClass = "org.embulk.guess.avro.AvroGuessPlugin"
     category = "guess"
     type = "avro"
-}
-
-task generateEmbulkProperties {
-    doLast {
-        mkdir ".embulk"
-        def f = file(".embulk/embulk.properties")
-        f.write("m2_repo=${System.properties["user.home"]}/.m2/repository\nplugins.guess.avro=maven:${project.group}:avro:${project.version}\n")
-        f.append("jruby=file://${System.getenv("JRUBY_PATH")}\n")
-    }
 }
 
 gem {
