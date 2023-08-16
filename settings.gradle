@@ -1,0 +1,4 @@
+rootProject.name = "embulk-parser-avro"
+
+include "embulk-parser-avro"
+include "embulk-guess-avro"

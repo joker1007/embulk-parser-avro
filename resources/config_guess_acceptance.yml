@@ -1,0 +1,12 @@
+exec:
+  guess_plugins: [avro]
+
+in:
+  type: file
+  path_prefix: items.avro
+  parser:
+    type: avro
+    avsc: item.avsc
+
+out:
+  type: stdout

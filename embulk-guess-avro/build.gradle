@@ -1,0 +1,96 @@
+plugins {
+    id "maven-publish"
+    id "signing"
+    id "org.embulk.embulk-plugins" version "0.5.5"
+}
+
+group = "io.github.joker1007"
+version = "0.5.0"
+description = "Embulk parser plugin for Apache Avro format"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    testImplementation project(":embulk-parser-avro")
+}
+
+embulkPlugin {
+    mainClass = "org.embulk.guess.avro.AvroGuessPlugin"
+    category = "guess"
+    type = "avro"
+}
+
+gem {
+    from(rootProject.file("LICENSE.txt"))
+    authors = [ "joker1007" ]
+    email = [ "kakyoin.hierophant@gmail.com" ]
+    description = "Guesses embulk schema from Avro files."
+    summary = "Avro guess plugin for Embulk"
+    homepage = "https://github.com/joker1007/embulk-parser-avro"
+    licenses = [ "MIT" ]
+}
+
+gemPush {
+    host = "https://rubygems.org"
+}
+
+publishing {
+    publications {
+        embulkPluginMaven(MavenPublication) {  // Publish it with "publishEmbulkPluginMavenPublicationToMavenRepository".
+            from components.java  // Must be "components.java". The dependency modification works only for it.
+            pom {
+                name = "embulk-parser-avro"
+                packaging = "jar"
+                description = "Embulk guess plugin for Apache Avro"
+                url = "https://github.com/joker1007/embulk-parser-avro"
+
+                licenses {
+                    license {
+                        // http://central.sonatype.org/pages/requirements.html#license-information
+                        name = "MIT License"
+                        url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git://github.com/joker1007/embulk-parser-avro.git"
+                    developerConnection = "scm:git@github.com:joker1007/embulk-parser-avro.git"
+                    url = "https://github.com/joker1007/embulk-parser-avro"
+                }
+
+                developers {
+                    developer {
+                        id = "joker1007"
+                        name = "Tomohiro Hashidate"
+                        email = "kakyoin.hierophant@gmail.com"
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {  // publishMavenPublicationToMavenCentralRepository
+            name = "mavenCentral"
+            if (project.version.endsWith("-SNAPSHOT")) {
+                url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            } else {
+                url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            }
+
+            credentials {
+                username = project.hasProperty("ossrhUsername") ? ossrhUsername : ""
+                password = project.hasProperty("ossrhPassword") ? ossrhPassword : ""
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.embulkPluginMaven
+}
+
+tasks.withType(Sign) {
+    onlyIf { System.getenv().get("SKIP_SIGNING") == null }
+}
